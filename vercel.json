@@ -1,6 +1,16 @@
 {
-  "functions": {
-    "api/search.py": { "runtime": "@vercel/python@3.1.60" },
-    "api/health.py": { "runtime": "@vercel/python@3.1.60" }
-  }
+  "version": 2,
+  "builds": [
+    { "src": "api/search.py", "use": "@vercel/python@3.1.60" },
+    { "src": "api/health.py", "use": "@vercel/python@3.1.60" },
+    { "src": "*.html", "use": "@vercel/static" },
+    { "src": "*.css", "use": "@vercel/static" },
+    { "src": "*.js", "use": "@vercel/static" }
+  ],
+  "routes": [
+    { "src": "/api/search", "dest": "/api/search.py" },
+    { "src": "/api/health", "dest": "/api/health.py" },
+    { "src": "/", "dest": "/presplash.html" },
+    { "src": "/(.+)", "dest": "/$1" }
+  ]
 }
