@@ -1,17 +1,18 @@
 // Vercel Node serverless function: /api/search?q=<query>&limit=<n>
-// JioSaavn proxy. DES-ECB decrypt encrypted_media_url, upgrade to 320kbps mp4.
+// JioSaavn proxy. DES-ECB decrypt via crypto-js (Node 20 OpenSSL 3 dropped DES default).
 
-import crypto from 'node:crypto';
+import CryptoJS from 'crypto-js';
 
-const KEY = Buffer.from('38346591');
+const KEY = CryptoJS.enc.Utf8.parse('38346591');
 const UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120 Safari/537.36';
 
 function decryptUrl(enc) {
-  // Node 17+ supports des-ecb. Padding: PKCS5 (default with setAutoPadding).
-  const decipher = crypto.createDecipheriv('des-ecb', KEY, null);
-  decipher.setAutoPadding(true);
-  const buf = Buffer.concat([decipher.update(enc, 'base64'), decipher.final()]);
-  return buf.toString('utf8');
+  const decrypted = CryptoJS.DES.decrypt(
+    { ciphertext: CryptoJS.enc.Base64.parse(enc) },
+    KEY,
+    { mode: CryptoJS.mode.ECB, padding: CryptoJS.pad.Pkcs7 }
+  );
+  return decrypted.toString(CryptoJS.enc.Utf8);
 }
 
 function upgradeQuality(url, quality = '320') {
@@ -47,7 +48,7 @@ async function searchSongs(query, limit = 12) {
     if (enc) {
       try {
         stream = upgradeQuality(decryptUrl(enc), info['320kbps'] === 'true' ? '320' : '160');
-      } catch (e) { console.warn('decrypt fail', e); }
+      } catch (e) { console.warn('decrypt fail', e.message); }
     }
     const artists = (info.artistMap?.primary_artists) || [];
     const artistName = artists.slice(0, 3).map(a => a.name).join(', ')
