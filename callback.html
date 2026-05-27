@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Connecting Spotify…</title>
+<style>
+  body { background:#000; color:#fff; font-family:system-ui; height:100vh; margin:0; display:grid; place-items:center; text-align:center; }
+  .spin { width:48px; height:48px; border:4px solid #333; border-top-color:#1DB954; border-radius:50%; animation: s 1s linear infinite; margin: 0 auto 24px; }
+  @keyframes s { to { transform: rotate(360deg); } }
+  .err { color:#ff6b6b; max-width:520px; padding: 16px; }
+  a { color: #1DB954; }
+</style>
+</head>
+<body>
+<div id="msg">
+  <div class="spin"></div>
+  <div>Linking your Spotify…</div>
+</div>
+<script src="config.js"></script>
+<script src="spotify.js"></script>
+<script>
+(async () => {
+  const params = new URLSearchParams(location.search);
+  const code = params.get('code');
+  const error = params.get('error');
+  const msg = document.getElementById('msg');
+
+  if (error) {
+    msg.innerHTML = `<div class="err"><h2>Spotify auth failed</h2><p>${error}</p><a href="welcome.html">Back to welcome</a></div>`;
+    return;
+  }
+  if (!code) {
+    msg.innerHTML = `<div class="err"><h2>No auth code</h2><a href="welcome.html">Try again</a></div>`;
+    return;
+  }
+  try {
+    await spotifyExchange(code);
+    // Pre-fetch profile + auto-create vs_user so signup step is skipped
+    try {
+      const me = await spApi('/me');
+      localStorage.setItem('vs_sp_user', JSON.stringify({
+        id: me.id, name: me.display_name, image: me.images?.[0]?.url || '', country: me.country
+      }));
+      if (!localStorage.getItem('vs_user')) {
+        localStorage.setItem('vs_user', JSON.stringify({
+          name: me.display_name || me.id,
+          email: me.email || '',
+          spotify: true,
+          joinedAt: Date.now()
+        }));
+      }
+    } catch (e) { console.warn('me fetch fail', e); }
+
+    // If prefs not set yet, go to welcome (will skip signup, jump to language)
+    // Otherwise straight to home
+    const dest = localStorage.getItem('vs_prefs') ? 'index.html' : 'welcome.html';
+    location.replace(dest);
+  } catch (e) {
+    console.error(e);
+    msg.innerHTML = `<div class="err"><h2>Token exchange failed</h2><p>${e.message}</p><p>Check redirect URI in Spotify dashboard matches: <code>${VS_CONFIG.SPOTIFY_REDIRECT_URI}</code></p><a href="welcome.html">Back</a></div>`;
+  }
+})();
+</script>
+</body>
+</html>

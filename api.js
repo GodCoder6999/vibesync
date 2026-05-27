@@ -328,9 +328,10 @@ function escapeAttr(s) {
   return String(s).replace(/'/g, '&#39;');
 }
 
-// Expose for pages that render cards dynamically (home.js)
+// Expose for pages that render cards dynamically (home.js, spotify bridge)
 window.vsPrefetch = prefetchCovers;
 window.vsAudio = audio;
+window.searchAndPlay = searchAndPlay;
 
 if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', init);
