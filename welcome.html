@@ -344,14 +344,13 @@ const $$ = s => document.querySelectorAll(s);
 if (localStorage.getItem('vs_user') && localStorage.getItem('vs_prefs')) {
   location.replace('index.html');
 }
-// If user is logged via Spotify but no prefs yet, jump straight to language step
-const _hasUser = !!localStorage.getItem('vs_user');
-const _needPrefs = !localStorage.getItem('vs_prefs');
-if (_hasUser && _needPrefs) {
-  document.addEventListener('DOMContentLoaded', () => {
-    document.querySelectorAll('.step').forEach(s => s.classList.remove('active'));
-    document.getElementById('step-2').classList.add('active');
-  });
+// If user is logged (e.g. Spotify) but no prefs yet, jump straight to language step.
+// Direct call — script is at end of body so all .step elements exist.
+if (localStorage.getItem('vs_user') && !localStorage.getItem('vs_prefs')) {
+  console.log('[welcome] user exists, no prefs — jumping to language step');
+  document.querySelectorAll('.step').forEach(s => s.classList.remove('active'));
+  const s2 = document.getElementById('step-2');
+  if (s2) s2.classList.add('active');
 }
 
 const ARTISTS = [

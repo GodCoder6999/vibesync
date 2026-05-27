@@ -35,25 +35,36 @@
   }
   try {
     await spotifyExchange(code);
-    // Pre-fetch profile + auto-create vs_user so signup step is skipped
+    console.log('[callback] token exchanged OK');
+
+    // Set minimal vs_user IMMEDIATELY so welcome flow skips signup step,
+    // regardless of /me success
+    if (!localStorage.getItem('vs_user')) {
+      localStorage.setItem('vs_user', JSON.stringify({
+        name: 'Spotify User',
+        spotify: true,
+        joinedAt: Date.now()
+      }));
+    }
+
+    // Enrich with /me (real name, email, avatar)
     try {
       const me = await spApi('/me');
+      console.log('[callback] /me OK:', me.display_name, me.id);
       localStorage.setItem('vs_sp_user', JSON.stringify({
         id: me.id, name: me.display_name, image: me.images?.[0]?.url || '', country: me.country
       }));
-      if (!localStorage.getItem('vs_user')) {
-        localStorage.setItem('vs_user', JSON.stringify({
-          name: me.display_name || me.id,
-          email: me.email || '',
-          spotify: true,
-          joinedAt: Date.now()
-        }));
-      }
-    } catch (e) { console.warn('me fetch fail', e); }
+      localStorage.setItem('vs_user', JSON.stringify({
+        name: me.display_name || me.id || 'Spotify User',
+        email: me.email || '',
+        spotify: true,
+        joinedAt: Date.now()
+      }));
+    } catch (e) { console.warn('[callback] /me failed:', e); }
 
     // If prefs not set yet, go to welcome (will skip signup, jump to language)
-    // Otherwise straight to home
     const dest = localStorage.getItem('vs_prefs') ? 'index.html' : 'welcome.html';
+    console.log('[callback] redirecting to', dest);
     location.replace(dest);
   } catch (e) {
     console.error(e);
