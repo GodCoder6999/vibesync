@@ -30,8 +30,29 @@ async function doRender() {
   const langs = (full?.languages || []).map(l => langMap[l]).filter(Boolean);
   const lang = langs.length ? langs.join(',') : 'hindi,english';
 
-  // ----- Fetch JioSaavn home + user-pref sections in parallel -----
+  // ----- Try Spotify-anon home FIRST (real Spotify catalog) -----
+  let useSpotify = false;
+  let spHome = null;
+  try {
+    const tok = await window.cat.spToken();
+    if (tok?.ok) {
+      spHome = await window.cat.spHome('US');
+      if (spHome && !spHome.error && ((spHome.new_releases || []).length + (spHome.featured || []).length) > 0) {
+        useSpotify = true;
+        console.log('[home] using Spotify-anon catalog');
+      }
+    }
+  } catch (e) { console.warn('[home] spotify-anon unavailable, falling back to JioSaavn', e); }
+
+  // ----- Fetch JioSaavn home as fallback (always loaded for user-pref rows below) -----
   const home = await window.cat.home(lang).catch(e => { console.warn('home fail', e); return {}; });
+
+  // If Spotify path active, override charts/playlists with Spotify data
+  if (useSpotify) {
+    home.charts = spHome.featured || [];
+    home.new_albums = spHome.new_releases || [];
+    home.playlists = spHome.categories || [];
+  }
 
   // SHORTCUTS: top 6 from charts + playlists (mix)
   const shortcuts = [
@@ -48,9 +69,12 @@ async function doRender() {
   // SECTIONS in order: Charts, New Releases, Featured Playlists, then artist/genre rows
   const container = document.getElementById('dynSections');
   const sections = [];
-  if (home.charts?.length)      sections.push({ title: 'Top Charts',         items: home.charts });
-  if (home.new_albums?.length)  sections.push({ title: 'New Releases',       items: home.new_albums });
-  if (home.playlists?.length)   sections.push({ title: 'Featured Playlists', items: home.playlists });
+  const SECTION_LABELS = useSpotify
+    ? ['Featured Playlists', 'New Releases', 'Browse Categories']
+    : ['Today\'s Top Hits', 'New Releases', 'Made For You'];
+  if (home.charts?.length)      sections.push({ title: SECTION_LABELS[0], items: home.charts });
+  if (home.new_albums?.length)  sections.push({ title: SECTION_LABELS[1], items: home.new_albums });
+  if (home.playlists?.length)   sections.push({ title: SECTION_LABELS[2], items: home.playlists });
 
   // Render JioSaavn home sections (tiles open by search-and-play)
   container.innerHTML = sections.map(sec => `
@@ -109,27 +133,46 @@ function bindCatalogTiles() {
     try { item = JSON.parse(tile.getAttribute('data-cat-tile')); } catch { return; }
     // Try to fetch tracks for playlist/album, else fall back to search-and-play first match
     try {
-      let track = null;
-      if (item.type === 'playlist' && item.id) {
+      let firstTitle = null;
+      let firstArtist = null;
+      if (item.type === 'sp-playlist') {
+        const p = await window.cat.spPlaylist(item.id);
+        const t = (p.tracks || [])[0];
+        if (t) { firstTitle = t.title; firstArtist = t.subtitle; }
+      } else if (item.type === 'sp-album') {
+        const a = await window.cat.spAlbum(item.id);
+        const t = (a.tracks || [])[0];
+        if (t) { firstTitle = t.title; firstArtist = t.subtitle; }
+      } else if (item.type === 'sp-track') {
+        firstTitle = item.title; firstArtist = item.subtitle;
+      } else if (item.type === 'playlist' && item.id) {
         const p = await window.cat.playlist(item.id);
-        track = (p.tracks || [])[0];
+        const tr = (p.tracks || [])[0];
+        if (tr && window.vsAudio) {
+          window.vsAudio.src = tr.url; window.vsAudio.play();
+          if (window.updateNowPlaying) window.updateNowPlaying(tr);
+          return;
+        }
       } else if (item.type === 'album' && item.id) {
         const a = await window.cat.album(item.id);
-        track = (a.tracks || [])[0];
-      } else if (item.type === 'chart' && item.id) {
-        // Charts are JioSaavn playlists too
-        const p = await window.cat.playlist(item.id);
-        track = (p.tracks || [])[0];
-      }
-      if (track && window.vsAudio) {
-        // Play first track of the playlist/album
-        if (window.searchAndPlay) {
-          // searchAndPlay accepts a query string. Pass through direct track instead.
-          window.vsAudio.src = track.url;
-          window.vsAudio.play();
-          if (window.updateNowPlaying) window.updateNowPlaying(track);
+        const tr = (a.tracks || [])[0];
+        if (tr && window.vsAudio) {
+          window.vsAudio.src = tr.url; window.vsAudio.play();
+          if (window.updateNowPlaying) window.updateNowPlaying(tr);
+          return;
         }
-        return;
+      } else if (item.type === 'chart' && item.id) {
+        const p = await window.cat.playlist(item.id);
+        const tr = (p.tracks || [])[0];
+        if (tr && window.vsAudio) {
+          window.vsAudio.src = tr.url; window.vsAudio.play();
+          if (window.updateNowPlaying) window.updateNowPlaying(tr);
+          return;
+        }
+      }
+      // Soundbound bridge: Spotify metadata → JioSaavn audio resolution
+      if (firstTitle && window.searchAndPlay) {
+        return window.searchAndPlay(`${firstTitle} ${firstArtist || ''}`.trim());
       }
     } catch (err) { console.warn('tile fetch fail', err); }
     // Fallback: search by tile.query
