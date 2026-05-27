@@ -94,11 +94,25 @@ async function playTrack(track) {
     audio.src = track.url;
     await audio.play();
     updateNowPlaying(track, { playing: true });
+    loadLyricsFor(track);
   } catch (e) {
     console.error('[vibesync] playback failed', e);
     updateNowPlaying(track, { error: e.message });
     toast('Could not play "' + track.title + '" — ' + e.message);
   }
+}
+
+async function loadLyricsFor(track) {
+  const box = document.querySelector('[data-lyrics-content]');
+  if (!box) return;
+  box.textContent = 'Loading lyrics…';
+  try {
+    const r = await fetch('/api/lyrics?title=' + encodeURIComponent(track.title) + '&artist=' + encodeURIComponent(track.artist || ''));
+    const d = await r.json();
+    if (d.instrumental) box.textContent = '♪ Instrumental';
+    else if (d.plain) box.textContent = d.plain;
+    else box.textContent = 'No lyrics found.';
+  } catch (e) { box.textContent = 'Lyrics unavailable.'; }
 }
 
 async function searchAndPlay(query) {
@@ -328,10 +342,12 @@ function escapeAttr(s) {
   return String(s).replace(/'/g, '&#39;');
 }
 
-// Expose for pages that render cards dynamically (home.js, spotify bridge)
+// Expose for pages that render cards dynamically (home.js, catalog tiles)
 window.vsPrefetch = prefetchCovers;
 window.vsAudio = audio;
 window.searchAndPlay = searchAndPlay;
+window.updateNowPlaying = updateNowPlaying;
+window.playTrack = playTrack;
 
 if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', init);

@@ -117,9 +117,9 @@ const NOW_OVERLAY = `
         <button class="ctrl" aria-label="Next"><svg width="18" height="18" viewBox="0 0 16 16" fill="currentColor"><path d="M12.7 1a.7.7 0 0 0-.7.7v5.15L2.05 1.107A.7.7 0 0 0 1 1.712v12.575a.7.7 0 0 0 1.05.607L12 9.149V14.3a.7.7 0 0 0 1.4 0V1.7a.7.7 0 0 0-.7-.7z"/></svg></button>
         <button class="ctrl" aria-label="Repeat"><svg width="18" height="18" viewBox="0 0 16 16" fill="currentColor"><path d="M0 4.75A3.75 3.75 0 0 1 3.75 1h8.5A3.75 3.75 0 0 1 16 4.75v5a3.75 3.75 0 0 1-3.75 3.75H9.81l1.018 1.018a.75.75 0 1 1-1.06 1.06L6.939 12.75l2.829-2.828a.75.75 0 1 1 1.06 1.06L9.811 12h2.439a2.25 2.25 0 0 0 2.25-2.25v-5a2.25 2.25 0 0 0-2.25-2.25h-8.5A2.25 2.25 0 0 0 1.5 4.75v5A2.25 2.25 0 0 0 3.75 12H5v1.5H3.75A3.75 3.75 0 0 1 0 9.75v-5z"/></svg></button>
       </div>
-      <div class="lyric-strip">
-        <strong>Streaming</strong>
-        Full 320kbps audio via local JioSaavn proxy. Use sidebar or close to return.
+      <div class="lyric-strip" id="lyricsBox" style="max-height:240px;overflow:auto;white-space:pre-wrap;font-style:normal">
+        <strong>Lyrics</strong>
+        <div data-lyrics-content style="margin-top:6px;color:var(--muted);font-size:13px;line-height:1.6">Play a song to load lyrics</div>
       </div>
     </div>
   </div>
