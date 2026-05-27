@@ -7,3 +7,7 @@ Thumbs.db
 .vercel/
 node_modules/
 *.log
+cb.json
+body.txt
+saavnme.json
+jio.json
