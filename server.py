@@ -461,6 +461,344 @@ def sp_artist_route():
         return jsonify(error=str(e)), 500
 
 
+# ---------- Spotify-shaped shim (/sp/v1/*) for React clone frontend ----------
+# Returns JioSaavn data wrapped in Spotify Web API response shape so the cloned
+# Spotify React frontend can use it unmodified.
+
+def jio_track_to_sp(t: dict, idx: int = 0) -> dict:
+    """Convert our internal JioSaavn track → Spotify Track shape."""
+    return {
+        "id": t.get("id", ""),
+        "name": t.get("title", ""),
+        "uri": f"spotify:track:{t.get('id', '')}",
+        "preview_url": t.get("url"),
+        "duration_ms": (t.get("duration") or 0) * 1000,
+        "explicit": False,
+        "popularity": 50,
+        "track_number": idx + 1,
+        "disc_number": 1,
+        "is_local": False,
+        "type": "track",
+        "external_urls": {},
+        "external_ids": {},
+        "available_markets": ["US"],
+        "artists": [{
+            "id": t.get("artist_id", ""),
+            "name": t.get("artist", ""),
+            "uri": f"spotify:artist:{t.get('artist_id', '')}",
+            "type": "artist",
+            "external_urls": {},
+            "href": "",
+        }],
+        "album": {
+            "id": t.get("album_id", ""),
+            "name": t.get("album", ""),
+            "uri": f"spotify:album:{t.get('album_id', '')}",
+            "type": "album",
+            "album_type": "album",
+            "images": [{"url": t.get("img", ""), "height": 500, "width": 500}],
+            "release_date": "",
+            "release_date_precision": "year",
+            "artists": [],
+            "external_urls": {},
+            "total_tracks": 1,
+        },
+        "href": "",
+    }
+
+
+def jio_album_to_sp(a: dict) -> dict:
+    return {
+        "id": a.get("id", ""),
+        "name": a.get("title", ""),
+        "uri": f"spotify:album:{a.get('id', '')}",
+        "type": "album",
+        "album_type": "album",
+        "images": [{"url": a.get("img", ""), "height": 500, "width": 500}],
+        "release_date": str(a.get("year", "") or ""),
+        "release_date_precision": "year",
+        "total_tracks": 0,
+        "artists": [{"id": "", "name": a.get("subtitle", ""), "uri": "", "type": "artist", "external_urls": {}}],
+        "external_urls": {},
+        "href": "",
+    }
+
+
+def jio_playlist_to_sp(p: dict) -> dict:
+    return {
+        "id": p.get("id", ""),
+        "name": p.get("title", ""),
+        "uri": f"spotify:playlist:{p.get('id', '')}",
+        "type": "playlist",
+        "public": True,
+        "collaborative": False,
+        "description": p.get("subtitle", "") or "",
+        "images": [{"url": p.get("img", ""), "height": 300, "width": 300}],
+        "tracks": {"total": 0, "href": ""},
+        "owner": {"id": "vibesync", "display_name": "VibeSync", "type": "user", "uri": "", "external_urls": {}},
+        "external_urls": {},
+        "href": "",
+        "snapshot_id": "",
+    }
+
+
+def _paginate(items, limit=20, offset=0):
+    return {
+        "items": items[offset:offset + limit],
+        "total": len(items),
+        "limit": limit,
+        "offset": offset,
+        "next": None,
+        "previous": None,
+        "href": "",
+    }
+
+
+@app.route("/sp/v1/search")
+def sp_v1_search():
+    q = (request.args.get("q") or "").strip()
+    types = (request.args.get("type") or "track,artist,album,playlist").split(",")
+    limit = int(request.args.get("limit", 10))
+    if not q:
+        return jsonify(error={"status": 400, "message": "missing q"}), 400
+    try:
+        # Search JioSaavn songs + map
+        data = jio("search.getResults", {"p": "1", "q": q, "n": str(limit)})
+        tracks = [format_track(s) for s in data.get("results", [])]
+        sp_tracks = [jio_track_to_sp(t, i) for i, t in enumerate(tracks) if t["url"]]
+
+        # Search albums
+        sp_albums = []
+        if "album" in types:
+            try:
+                ad = jio("search.getAlbumResults", {"p": "1", "q": q, "n": str(limit)})
+                for a in (ad.get("results") or [])[:limit]:
+                    sp_albums.append(jio_album_to_sp({
+                        "id": a.get("id"), "title": clean(a.get("title")),
+                        "subtitle": clean(a.get("more_info", {}).get("music", "") or a.get("subtitle", "")),
+                        "img": big_img(a.get("image")), "year": a.get("year", ""),
+                    }))
+            except Exception:
+                pass
+
+        # Search playlists
+        sp_pls = []
+        if "playlist" in types:
+            try:
+                pd = jio("search.getPlaylistResults", {"p": "1", "q": q, "n": str(limit)})
+                for p in (pd.get("results") or [])[:limit]:
+                    sp_pls.append(jio_playlist_to_sp({
+                        "id": p.get("id"), "title": clean(p.get("title")),
+                        "subtitle": clean(p.get("subtitle", "")), "img": big_img(p.get("image")),
+                    }))
+            except Exception:
+                pass
+
+        # Search artists
+        sp_artists = []
+        if "artist" in types:
+            try:
+                ar = jio("search.getArtists", {"p": "1", "q": q, "n": str(limit)})
+                for a in (ar.get("results") or [])[:limit]:
+                    sp_artists.append({
+                        "id": a.get("id", ""),
+                        "name": clean(a.get("name", a.get("title", ""))),
+                        "uri": f"spotify:artist:{a.get('id', '')}",
+                        "type": "artist",
+                        "images": [{"url": big_img(a.get("image", "")), "height": 500, "width": 500}],
+                        "followers": {"total": 0, "href": None},
+                        "genres": [],
+                        "popularity": 50,
+                        "external_urls": {},
+                        "href": "",
+                    })
+            except Exception:
+                pass
+
+        return jsonify(
+            tracks=_paginate(sp_tracks, limit),
+            albums=_paginate(sp_albums, limit),
+            playlists=_paginate(sp_pls, limit),
+            artists=_paginate(sp_artists, limit),
+        )
+    except Exception as e:
+        return jsonify(error={"status": 500, "message": str(e)}), 500
+
+
+@app.route("/sp/v1/browse/new-releases")
+def sp_v1_new_releases():
+    limit = int(request.args.get("limit", 20))
+    try:
+        data = jio("content.getHomepageData", {"language": "hindi,english", "n": "1"})
+        items = []
+        for a in (data.get("new_albums") or [])[:limit]:
+            items.append(jio_album_to_sp({
+                "id": a.get("id"), "title": clean(a.get("title")),
+                "subtitle": clean(a.get("subtitle", "")), "img": big_img(a.get("image")),
+                "year": a.get("year", ""),
+            }))
+        return jsonify(albums=_paginate(items, limit))
+    except Exception as e:
+        return jsonify(albums=_paginate([], limit), error={"status": 500, "message": str(e)})
+
+
+@app.route("/sp/v1/browse/featured-playlists")
+def sp_v1_featured():
+    limit = int(request.args.get("limit", 20))
+    try:
+        data = jio("content.getHomepageData", {"language": "hindi,english", "n": "1"})
+        items = []
+        for p in ((data.get("featured_playlists") or data.get("top_playlists")) or [])[:limit]:
+            items.append(jio_playlist_to_sp({
+                "id": p.get("id"), "title": clean(p.get("title")),
+                "subtitle": clean(p.get("subtitle", "")), "img": big_img(p.get("image")),
+            }))
+        return jsonify(message="Featured", playlists=_paginate(items, limit))
+    except Exception as e:
+        return jsonify(message="Featured", playlists=_paginate([], limit), error={"status": 500, "message": str(e)})
+
+
+@app.route("/sp/v1/browse/categories")
+def sp_v1_categories():
+    limit = int(request.args.get("limit", 30))
+    try:
+        data = jio("content.getHomepageData", {"language": "hindi,english", "n": "1"})
+        items = []
+        for c in (data.get("charts") or [])[:limit]:
+            items.append({
+                "id": c.get("id", ""),
+                "name": clean(c.get("title", "")),
+                "icons": [{"url": big_img(c.get("image", "")), "height": 300, "width": 300}],
+                "href": "",
+            })
+        return jsonify(categories=_paginate(items, limit))
+    except Exception as e:
+        return jsonify(categories=_paginate([], limit), error={"status": 500, "message": str(e)})
+
+
+@app.route("/sp/v1/playlists/<pid>")
+def sp_v1_playlist(pid):
+    try:
+        d = jio("playlist.getDetails", {"listid": pid})
+        tracks = [format_track(s) for s in (d.get("songs") or d.get("list") or [])]
+        sp_tracks = [jio_track_to_sp(t, i) for i, t in enumerate(tracks) if t["url"]]
+        return jsonify({
+            "id": d.get("id", pid),
+            "name": clean(d.get("title") or d.get("listname", "")),
+            "uri": f"spotify:playlist:{pid}",
+            "type": "playlist",
+            "public": True,
+            "collaborative": False,
+            "description": clean(d.get("subtitle", "") or ""),
+            "images": [{"url": big_img(d.get("image", "")), "height": 300, "width": 300}],
+            "owner": {"id": "vibesync", "display_name": "VibeSync", "type": "user", "uri": "", "external_urls": {}},
+            "tracks": {
+                "items": [{"added_at": "", "added_by": None, "is_local": False, "track": t} for t in sp_tracks],
+                "total": len(sp_tracks),
+                "limit": len(sp_tracks),
+                "offset": 0,
+                "next": None,
+                "previous": None,
+                "href": "",
+            },
+            "external_urls": {},
+            "href": "",
+            "snapshot_id": "",
+        })
+    except Exception as e:
+        return jsonify(error={"status": 500, "message": str(e)}), 500
+
+
+@app.route("/sp/v1/playlists/<pid>/tracks")
+def sp_v1_playlist_tracks(pid):
+    limit = int(request.args.get("limit", 50))
+    try:
+        d = jio("playlist.getDetails", {"listid": pid})
+        tracks = [format_track(s) for s in (d.get("songs") or d.get("list") or [])]
+        sp_tracks = [jio_track_to_sp(t, i) for i, t in enumerate(tracks) if t["url"]]
+        items = [{"added_at": "", "added_by": None, "is_local": False, "track": t} for t in sp_tracks]
+        return jsonify(_paginate(items, limit))
+    except Exception as e:
+        return jsonify(_paginate([], limit, 0), error={"status": 500, "message": str(e)})
+
+
+@app.route("/sp/v1/albums/<aid>")
+def sp_v1_album(aid):
+    try:
+        d = jio("content.getAlbumDetails", {"albumid": aid})
+        tracks = [format_track(s) for s in (d.get("songs") or d.get("list") or [])]
+        sp_tracks = [jio_track_to_sp(t, i) for i, t in enumerate(tracks) if t["url"]]
+        return jsonify({
+            "id": d.get("id", aid),
+            "name": clean(d.get("title") or d.get("name", "")),
+            "uri": f"spotify:album:{aid}",
+            "type": "album",
+            "album_type": "album",
+            "images": [{"url": big_img(d.get("image", "")), "height": 500, "width": 500}],
+            "release_date": str(d.get("year", "") or ""),
+            "release_date_precision": "year",
+            "total_tracks": len(sp_tracks),
+            "artists": [],
+            "tracks": {
+                "items": sp_tracks,
+                "total": len(sp_tracks), "limit": len(sp_tracks), "offset": 0,
+                "next": None, "previous": None, "href": "",
+            },
+            "external_urls": {},
+            "href": "",
+        })
+    except Exception as e:
+        return jsonify(error={"status": 500, "message": str(e)}), 500
+
+
+@app.route("/sp/v1/artists/<aid>")
+def sp_v1_artist(aid):
+    try:
+        d = jio("artist.getArtistPageDetails", {"artistId": aid})
+        return jsonify({
+            "id": d.get("artistId", aid),
+            "name": clean(d.get("name", "")),
+            "uri": f"spotify:artist:{aid}",
+            "type": "artist",
+            "images": [{"url": big_img(d.get("image", "")), "height": 500, "width": 500}],
+            "followers": {"total": int(d.get("follower_count", 0) or 0), "href": None},
+            "genres": [],
+            "popularity": 70,
+            "external_urls": {},
+            "href": "",
+        })
+    except Exception as e:
+        return jsonify(error={"status": 500, "message": str(e)}), 500
+
+
+@app.route("/sp/v1/artists/<aid>/top-tracks")
+def sp_v1_artist_top(aid):
+    try:
+        d = jio("artist.getArtistPageDetails", {"artistId": aid})
+        tracks = [format_track(s) for s in (d.get("topSongs") or [])]
+        sp_tracks = [jio_track_to_sp(t, i) for i, t in enumerate(tracks) if t["url"]]
+        return jsonify(tracks=sp_tracks)
+    except Exception as e:
+        return jsonify(tracks=[], error={"status": 500, "message": str(e)})
+
+
+@app.route("/sp/v1/me")
+def sp_v1_me():
+    return jsonify({
+        "id": "vibesync_user",
+        "display_name": "VibeSync Listener",
+        "email": "",
+        "country": "US",
+        "product": "open",
+        "type": "user",
+        "uri": "spotify:user:vibesync_user",
+        "images": [{"url": "https://www.gravatar.com/avatar/?d=mp&s=200", "height": 200, "width": 200}],
+        "followers": {"total": 0, "href": None},
+        "external_urls": {},
+        "href": "",
+    })
+
+
 # ---------- Static fallback (for local dev only) ----------
 @app.route("/")
 def root():

@@ -6,6 +6,9 @@ venv/
 Thumbs.db
 .vercel/
 node_modules/
+next/node_modules/
+next/build/
+next/.env.local
 *.log
 cb.json
 body.txt
