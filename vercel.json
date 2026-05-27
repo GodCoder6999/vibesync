@@ -3,5 +3,9 @@
   "trailingSlash": false,
   "rewrites": [
     { "source": "/", "destination": "/presplash.html" }
-  ]
+  ],
+  "functions": {
+    "api/search.py": { "runtime": "@vercel/python@4.3.0" },
+    "api/health.py": { "runtime": "@vercel/python@4.3.0" }
+  }
 }
