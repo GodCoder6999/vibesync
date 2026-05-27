@@ -1,0 +1,512 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Welcome to VibeSync</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg-0: #000; --bg-1: #121212; --surface-2: #2a2a2a; --surface-3: #333;
+  --text: #fff; --muted: #b3b3b3; --accent: #1DB954; --accent-hover: #1ed760;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+button { font: inherit; color: inherit; background: none; border: 0; cursor: pointer; text-align: inherit; }
+body {
+  font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+  background: var(--bg-0);
+  color: var(--text);
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+}
+.welcome-shell {
+  min-height: 100vh;
+  display: grid; place-items: center;
+  background: radial-gradient(900px 600px at 20% 0%, rgba(29,185,84,0.18), transparent 60%),
+              radial-gradient(800px 500px at 80% 100%, rgba(80,56,160,0.25), transparent 60%),
+              var(--bg-0);
+  padding: 24px;
+}
+.welcome-card {
+  width: 100%; max-width: 880px;
+  background: var(--bg-1);
+  border-radius: 16px;
+  padding: 40px;
+  border: 1px solid rgba(255,255,255,0.08);
+  box-shadow: 0 24px 60px rgba(0,0,0,0.6);
+  max-height: 92vh;
+  overflow-y: auto;
+}
+.brand-row {
+  display: flex; align-items: center; gap: 12px;
+  margin-bottom: 24px;
+}
+.brand-mark {
+  width: 36px; height: 36px;
+  border-radius: 50%;
+  background: var(--accent);
+  position: relative;
+}
+.brand-mark::before, .brand-mark::after {
+  content: ''; position: absolute;
+  left: 8px; right: 8px;
+  height: 2px; background: #000; border-radius: 1px;
+}
+.brand-mark::before { top: 12px; }
+.brand-mark::after { top: 20px; }
+.brand-row span { font-size: 22px; font-weight: 800; letter-spacing: -0.02em; }
+
+.step { display: none; }
+.step.active { display: block; }
+.step h1 {
+  font-size: clamp(26px, 3.5vw, 36px);
+  font-weight: 900; letter-spacing: -0.03em;
+  line-height: 1.1;
+}
+.step p.sub {
+  margin-top: 12px;
+  color: var(--muted);
+  font-size: 15px;
+  line-height: 1.5;
+  max-width: 560px;
+}
+
+.field { margin-top: 18px; }
+.field label { display: block; font-size: 13px; font-weight: 700; margin-bottom: 8px; }
+.field input {
+  width: 100%;
+  padding: 14px 16px;
+  border-radius: 6px;
+  background: var(--bg-0);
+  border: 1px solid rgba(255,255,255,0.18);
+  color: var(--text);
+  font: inherit; font-size: 14px;
+  outline: none;
+  transition: border-color 0.15s;
+}
+.field input:focus { border-color: var(--text); }
+
+.btn {
+  display: inline-block;
+  padding: 14px 36px;
+  border-radius: 999px;
+  background: var(--accent);
+  color: #000;
+  font-weight: 700; font-size: 15px;
+  border: 0; cursor: pointer;
+  margin-top: 28px;
+  transition: transform 0.1s, background 0.1s;
+}
+.btn:hover { background: var(--accent-hover); transform: scale(1.03); }
+.btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+.btn-ghost { background: transparent; color: var(--muted); margin-left: 12px; }
+.btn-ghost:hover { color: var(--text); background: transparent; }
+
+/* Chips (used for language + genres) */
+.chips { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 24px; }
+.chip {
+  padding: 12px 22px;
+  border-radius: 999px;
+  background: transparent;
+  border: 1px solid rgba(255,255,255,0.22);
+  color: var(--text);
+  font-size: 15px; font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.chip:hover { border-color: var(--text); }
+.chip.selected { background: var(--text); color: #000; border-color: var(--text); }
+
+/* Artist grid with row expansions */
+.artist-grid { margin-top: 24px; display: flex; flex-direction: column; gap: 12px; }
+.artist-row {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 16px;
+}
+.artist {
+  display: flex; flex-direction: column; align-items: center; gap: 8px;
+  cursor: pointer;
+  padding: 8px 4px;
+  border-radius: 8px;
+  transition: background 0.15s;
+  position: relative;
+}
+.artist:hover { background: rgba(255,255,255,0.04); }
+.artist .avatar-wrap {
+  width: 100%; aspect-ratio: 1;
+  max-width: 120px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #333, #555) center/cover no-repeat;
+  position: relative;
+  display: grid; place-items: center;
+  color: var(--muted);
+  font-size: 28px; font-weight: 800;
+  overflow: hidden;
+  box-shadow: 0 8px 18px rgba(0,0,0,0.45);
+}
+.artist .avatar-wrap[data-loaded] { color: transparent; }
+.artist .check {
+  position: absolute;
+  top: 4px; right: 8px;
+  width: 28px; height: 28px;
+  border-radius: 50%;
+  background: var(--accent);
+  display: none;
+  place-items: center;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+  z-index: 2;
+}
+.artist.selected .check { display: grid; }
+.artist.selected .avatar-wrap { box-shadow: 0 0 0 3px var(--accent); }
+.artist .name {
+  font-size: 13px; font-weight: 600;
+  color: var(--text);
+  text-align: center;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  max-width: 100%;
+}
+
+.artist-expansion {
+  display: none;
+  background: rgba(29,185,84,0.06);
+  border: 1px solid rgba(29,185,84,0.25);
+  border-radius: 10px;
+  padding: 12px 16px;
+  margin-top: -4px;
+}
+.artist-expansion.open { display: block; }
+.exp-head {
+  font-size: 12px; letter-spacing: 0.04em; color: var(--accent);
+  font-weight: 700; text-transform: uppercase;
+  margin-bottom: 10px;
+}
+.exp-songs {
+  display: flex; gap: 8px; flex-wrap: wrap;
+}
+.exp-song {
+  display: flex; align-items: center; gap: 6px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: var(--surface-2);
+  font-size: 13px;
+  color: var(--text);
+}
+.exp-song::before {
+  content: '♪'; color: var(--accent); font-size: 14px;
+}
+
+.step-foot {
+  display: flex; align-items: center;
+  margin-top: 32px;
+  padding-top: 24px;
+  border-top: 1px solid rgba(255,255,255,0.08);
+}
+.step-meta { font-size: 13px; color: var(--muted); margin-left: auto; }
+.progress-pips { display: flex; gap: 6px; }
+.progress-pips span {
+  width: 24px; height: 4px;
+  background: rgba(255,255,255,0.14);
+  border-radius: 999px;
+}
+.progress-pips span.on { background: var(--accent); }
+
+@media (max-width: 720px) {
+  .artist-row { grid-template-columns: repeat(3, 1fr); }
+  .welcome-card { padding: 24px; }
+}
+@media (max-width: 420px) {
+  .artist-row { grid-template-columns: repeat(2, 1fr); }
+}
+</style>
+</head>
+<body>
+<div class="welcome-shell">
+  <div class="welcome-card">
+    <div class="brand-row">
+      <div class="brand-mark"></div>
+      <span>VibeSync</span>
+    </div>
+
+    <!-- Step 1: Signup -->
+    <div class="step active" id="step-1">
+      <h1>Sign up to start listening</h1>
+      <p class="sub">Free forever. Full 320 kbps streams.</p>
+      <div class="field"><label for="name">Your name</label><input id="name" type="text" placeholder="What should we call you?" autocomplete="name" required></div>
+      <div class="field"><label for="email">Email</label><input id="email" type="email" placeholder="you@example.com" autocomplete="email" required></div>
+      <div class="field"><label for="pw">Password</label><input id="pw" type="password" placeholder="At least 6 characters" autocomplete="new-password" required></div>
+      <div class="step-foot">
+        <div class="progress-pips"><span class="on"></span><span></span><span></span><span></span></div>
+        <div class="step-meta">Step 1 of 4</div>
+      </div>
+      <button class="btn" id="toStep2">Continue</button>
+    </div>
+
+    <!-- Step 2: Language -->
+    <div class="step" id="step-2">
+      <h1>Pick your languages</h1>
+      <p class="sub">Which languages do you listen to? Pick all that apply.</p>
+      <div class="chips" id="langChips">
+        <button class="chip" data-pref="Hindi">Hindi</button>
+        <button class="chip" data-pref="English">English</button>
+        <button class="chip" data-pref="Punjabi">Punjabi</button>
+        <button class="chip" data-pref="Tamil">Tamil</button>
+        <button class="chip" data-pref="Telugu">Telugu</button>
+        <button class="chip" data-pref="Bengali">Bengali</button>
+        <button class="chip" data-pref="Marathi">Marathi</button>
+        <button class="chip" data-pref="Gujarati">Gujarati</button>
+        <button class="chip" data-pref="Kannada">Kannada</button>
+        <button class="chip" data-pref="Malayalam">Malayalam</button>
+        <button class="chip" data-pref="Bhojpuri">Bhojpuri</button>
+        <button class="chip" data-pref="Korean">Korean</button>
+        <button class="chip" data-pref="Spanish">Spanish</button>
+        <button class="chip" data-pref="Arabic">Arabic</button>
+      </div>
+      <div class="step-foot">
+        <div class="progress-pips"><span class="on"></span><span class="on"></span><span></span><span></span></div>
+        <div class="step-meta"><span id="langCount">0</span> selected</div>
+      </div>
+      <button class="btn" id="toStep3" disabled>Next</button>
+      <button class="btn btn-ghost" data-back="1">Back</button>
+    </div>
+
+    <!-- Step 3: Artists -->
+    <div class="step" id="step-3">
+      <h1>Pick artists you love</h1>
+      <p class="sub">Tap any artist to see top songs. Pick at least 3.</p>
+      <div class="artist-grid" id="artistGrid"></div>
+      <div class="step-foot">
+        <div class="progress-pips"><span class="on"></span><span class="on"></span><span class="on"></span><span></span></div>
+        <div class="step-meta"><span id="artistCount">0</span> selected</div>
+      </div>
+      <button class="btn" id="toStep4" disabled>Next</button>
+      <button class="btn btn-ghost" data-back="2">Back</button>
+    </div>
+
+    <!-- Step 4: Music type -->
+    <div class="step" id="step-4">
+      <h1>What kind of music?</h1>
+      <p class="sub">Moods, genres, vibes. Pick at least 3.</p>
+      <div class="chips" id="genreChips">
+        <button class="chip" data-pref="Bollywood">Bollywood</button>
+        <button class="chip" data-pref="Romantic">Romantic</button>
+        <button class="chip" data-pref="Party">Party</button>
+        <button class="chip" data-pref="Sad">Sad</button>
+        <button class="chip" data-pref="Workout">Workout</button>
+        <button class="chip" data-pref="Chill">Chill</button>
+        <button class="chip" data-pref="Devotional">Devotional</button>
+        <button class="chip" data-pref="Driving">Driving</button>
+        <button class="chip" data-pref="Sleep">Sleep</button>
+        <button class="chip" data-pref="Focus">Focus</button>
+        <button class="chip" data-pref="Lo-Fi">Lo-Fi</button>
+        <button class="chip" data-pref="Indie">Indie</button>
+        <button class="chip" data-pref="Pop">Pop</button>
+        <button class="chip" data-pref="Rock">Rock</button>
+        <button class="chip" data-pref="Hip-Hop">Hip-Hop</button>
+        <button class="chip" data-pref="R&amp;B">R&amp;B</button>
+        <button class="chip" data-pref="Electronic">Electronic</button>
+        <button class="chip" data-pref="Classical">Classical</button>
+        <button class="chip" data-pref="K-Pop">K-Pop</button>
+        <button class="chip" data-pref="Afrobeats">Afrobeats</button>
+        <button class="chip" data-pref="Punjabi">Punjabi Pop</button>
+      </div>
+      <div class="step-foot">
+        <div class="progress-pips"><span class="on"></span><span class="on"></span><span class="on"></span><span class="on"></span></div>
+        <div class="step-meta"><span id="genreCount">0</span> selected</div>
+      </div>
+      <button class="btn" id="finishBtn" disabled>Start listening</button>
+      <button class="btn btn-ghost" data-back="3">Back</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const $ = s => document.querySelector(s);
+const $$ = s => document.querySelectorAll(s);
+
+// Skip if already onboarded
+if (localStorage.getItem('vs_user') && localStorage.getItem('vs_prefs')) {
+  location.replace('index.html');
+}
+
+const ARTISTS = [
+  { name: 'Arijit Singh',     songs: ['Tum Hi Ho', 'Channa Mereya', 'Kesariya', 'Apna Bana Le'] },
+  { name: 'Shreya Ghoshal',   songs: ['Teri Ore', 'Sun Raha Hai Na Tu', 'Ghar More Pardesiya', 'Mere Dholna'] },
+  { name: 'Sonu Nigam',       songs: ['Kal Ho Naa Ho', 'Suraj Hua Maddham', 'Main Agar Kahoon', 'Abhi Mujh Mein Kahin'] },
+  { name: 'Sunidhi Chauhan',  songs: ['Sheila Ki Jawani', 'Crazy Kiya Re', 'Beedi', 'Aaja Nachle'] },
+  { name: 'Atif Aslam',       songs: ['Tera Hone Laga Hoon', 'Tu Jaane Na', 'Pehli Nazar Mein', 'Dil Diyan Gallan'] },
+  { name: 'Mohit Chauhan',    songs: ['Tum Se Hi', 'Pehli Baar', 'Masakali', 'Jo Bhi Main'] },
+  { name: 'Yo Yo Honey Singh',songs: ['Lungi Dance', 'Brown Rang', 'Dheere Dheere', 'High Heels'] },
+  { name: 'Ankit Tiwari',     songs: ['Galliyan', 'Sun Raha Hai Na Tu', 'Tu Hai Ki Nahi', 'Katra Katra'] },
+  { name: 'AR Rahman',        songs: ['Tum Tak', 'Khwaja Mere Khwaja', 'Vande Mataram', 'Jai Ho'] },
+  { name: 'Pritam',           songs: ['Channa Mereya', 'Kesariya', 'Ae Dil Hai Mushkil', 'Tum Hi Ho'] },
+  { name: 'AP Dhillon',       songs: ['Excuses', 'Brown Munde', 'Insane', 'With You'] },
+  { name: 'Karan Aujla',      songs: ['52 Bars', 'Softly', 'Tauba Tauba', 'Try Me'] },
+  { name: 'The Weeknd',       songs: ['Blinding Lights', 'Save Your Tears', 'Starboy', 'The Hills'] },
+  { name: 'Taylor Swift',     songs: ['Anti-Hero', 'Cruel Summer', 'Shake It Off', 'Blank Space'] },
+  { name: 'Drake',            songs: ["God's Plan", 'In My Feelings', 'One Dance', 'Hotline Bling'] },
+  { name: 'Ed Sheeran',       songs: ['Shape of You', 'Perfect', 'Photograph', 'Thinking Out Loud'] },
+  { name: 'Harry Styles',     songs: ['As It Was', 'Watermelon Sugar', 'Adore You', 'Sign of the Times'] },
+  { name: 'Dua Lipa',         songs: ['Levitating', 'New Rules', 'Don\'t Start Now', 'Houdini'] },
+  { name: 'BTS',              songs: ['Dynamite', 'Butter', 'Boy With Luv', 'Permission to Dance'] },
+  { name: 'Coldplay',         songs: ['Viva La Vida', 'Yellow', 'Hymn for the Weekend', 'Fix You'] },
+  { name: 'Bruno Mars',       songs: ['Uptown Funk', 'Just the Way You Are', '24K Magic', 'Locked Out of Heaven'] },
+  { name: 'Imagine Dragons',  songs: ['Believer', 'Thunder', 'Demons', 'Radioactive'] },
+  { name: 'Justin Bieber',    songs: ['Sorry', 'Love Yourself', 'Peaches', 'Stay'] },
+  { name: 'BLACKPINK',        songs: ['How You Like That', 'Pink Venom', 'Kill This Love', 'DDU-DU DDU-DU'] }
+];
+
+const selectedArtists = new Set();
+const selectedLangs = new Set();
+const selectedGenres = new Set();
+
+// ---------- Step 1: Signup ----------
+$('#toStep2').addEventListener('click', () => {
+  const name = $('#name').value.trim();
+  const email = $('#email').value.trim();
+  const pw = $('#pw').value;
+  if (!name || !email || pw.length < 6) {
+    alert('Fill name, valid email, password 6+ chars.');
+    return;
+  }
+  localStorage.setItem('vs_user', JSON.stringify({ name, email, joinedAt: Date.now() }));
+  go('step-2');
+});
+
+// ---------- Step 2: Language ----------
+$('#langChips').addEventListener('click', (e) => {
+  const c = e.target.closest('.chip');
+  if (!c) return;
+  toggleSet(selectedLangs, c.dataset.pref, c);
+  $('#langCount').textContent = selectedLangs.size;
+  $('#toStep3').disabled = selectedLangs.size < 1;
+});
+$('#toStep3').addEventListener('click', () => { renderArtists(); go('step-3'); });
+
+// ---------- Step 3: Artists with row expansion ----------
+function renderArtists() {
+  const grid = $('#artistGrid');
+  grid.innerHTML = '';
+  const COLS = window.innerWidth < 720 ? 3 : 5;
+  for (let i = 0; i < ARTISTS.length; i += COLS) {
+    const group = ARTISTS.slice(i, i + COLS);
+    const row = document.createElement('div');
+    row.className = 'artist-row';
+    row.dataset.rowIdx = i / COLS;
+    group.forEach((a, j) => {
+      const initial = a.name[0];
+      const tile = document.createElement('button');
+      tile.className = 'artist';
+      tile.dataset.artist = a.name;
+      tile.innerHTML = `
+        <div class="avatar-wrap">${escapeHtml(initial)}
+          <div class="check">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#000" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+          </div>
+        </div>
+        <div class="name">${escapeHtml(a.name)}</div>`;
+      tile.addEventListener('click', () => onArtistClick(a, tile, row));
+      row.appendChild(tile);
+      loadArtistPhoto(a.name, tile.querySelector('.avatar-wrap'));
+    });
+    grid.appendChild(row);
+    const exp = document.createElement('div');
+    exp.className = 'artist-expansion';
+    exp.dataset.rowIdx = i / COLS;
+    grid.appendChild(exp);
+  }
+}
+
+function onArtistClick(a, tile, row) {
+  const wasSelected = selectedArtists.has(a.name);
+  if (wasSelected) {
+    selectedArtists.delete(a.name);
+    tile.classList.remove('selected');
+  } else {
+    selectedArtists.add(a.name);
+    tile.classList.add('selected');
+  }
+  $('#artistCount').textContent = selectedArtists.size;
+  $('#toStep4').disabled = selectedArtists.size < 3;
+
+  // Update this row's expansion: list every selected artist's songs from this row
+  const rowIdx = row.dataset.rowIdx;
+  const exp = document.querySelector(`.artist-expansion[data-row-idx="${rowIdx}"]`);
+  const rowArtists = Array.from(row.querySelectorAll('.artist.selected')).map(t => t.dataset.artist);
+  if (!rowArtists.length) { exp.classList.remove('open'); exp.innerHTML = ''; return; }
+  exp.classList.add('open');
+  exp.innerHTML = rowArtists.map(name => {
+    const def = ARTISTS.find(x => x.name === name);
+    if (!def) return '';
+    return `
+      <div class="exp-head">${escapeHtml(name)} — Top songs</div>
+      <div class="exp-songs">
+        ${def.songs.map(s => `<span class="exp-song">${escapeHtml(s)}</span>`).join('')}
+      </div>`;
+  }).join('<div style="height:10px"></div>');
+}
+
+async function loadArtistPhoto(name, el) {
+  const key = 'vs_artist_' + name;
+  let url = sessionStorage.getItem(key);
+  if (!url) {
+    try {
+      const r = await fetch('/api/search?q=' + encodeURIComponent(name) + '&limit=1');
+      const j = await r.json();
+      url = j.results?.[0]?.artist_img || '';
+      if (url) sessionStorage.setItem(key, url);
+    } catch {}
+  }
+  if (url) {
+    el.style.backgroundImage = `url("${url}")`;
+    el.dataset.loaded = '1';
+  }
+}
+
+$('#toStep4').addEventListener('click', () => go('step-4'));
+
+// ---------- Step 4: Genres ----------
+$('#genreChips').addEventListener('click', (e) => {
+  const c = e.target.closest('.chip');
+  if (!c) return;
+  toggleSet(selectedGenres, c.dataset.pref, c);
+  $('#genreCount').textContent = selectedGenres.size;
+  $('#finishBtn').disabled = selectedGenres.size < 3;
+});
+
+$('#finishBtn').addEventListener('click', () => {
+  const prefs = {
+    languages: [...selectedLangs],
+    artists: [...selectedArtists],
+    genres: [...selectedGenres]
+  };
+  // Flatten artists + genres into single vs_prefs array for home.js compatibility,
+  // but also keep structured copy.
+  localStorage.setItem('vs_prefs', JSON.stringify([...selectedArtists, ...selectedGenres]));
+  localStorage.setItem('vs_prefs_full', JSON.stringify(prefs));
+  location.href = 'index.html';
+});
+
+// ---------- Back buttons ----------
+document.querySelectorAll('[data-back]').forEach(b => {
+  b.addEventListener('click', () => go('step-' + b.dataset.back));
+});
+
+// ---------- Helpers ----------
+function go(id) {
+  $$('.step').forEach(s => s.classList.remove('active'));
+  $('#' + id).classList.add('active');
+  $('.welcome-card').scrollTop = 0;
+}
+function toggleSet(set, val, el) {
+  if (set.has(val)) { set.delete(val); el.classList.remove('selected'); }
+  else { set.add(val); el.classList.add('selected'); }
+}
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+</script>
+</body>
+</html>

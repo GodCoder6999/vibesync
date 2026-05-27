@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>VibeSync — Immersive Player</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+<script>
+if (!localStorage.getItem('vs_user') || !localStorage.getItem('vs_prefs')) {
+  location.replace('welcome.html');
+}
+</script>
+</head>
+<body>
+<div class="app">
+  <div id="chrome-sidebar"></div>
+  <main class="main">
+    <header class="topbar">
+      <div class="nav-arrows">
+        <a href="index.html" class="icon-btn"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5"/><path d="M12 19l-7-7 7-7"/></svg></a>
+      </div>
+      <div class="search-wrap">
+        <div class="search">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-5-5"/></svg>
+          <input placeholder="Search any song to play here…" data-search-input>
+        </div>
+        <div class="search-results" data-search-results></div>
+      </div>
+      <div class="top-actions">
+        <button class="icon-btn" aria-label="Share"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="M8.6 13.5l6.8 4M15.4 6.5l-6.8 4"/></svg></button>
+        <button class="icon-btn" aria-label="More"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg></button>
+      </div>
+    </header>
+
+    <section class="player-page">
+      <div class="album-stage">
+        <div class="album-glow"></div>
+        <div class="album-art" data-np-cover></div>
+      </div>
+
+      <div class="player-info">
+        <div class="now-meta">
+          <div class="eyebrow">Now Playing</div>
+          <h1 data-np-title>No track loaded</h1>
+          <div class="artist" data-np-artist>Search a song or pick from Discover</div>
+        </div>
+
+        <div class="progress">
+          <div class="bar" data-seek><div class="bar-fill" data-progress-fill></div></div>
+          <div class="times"><span data-current-time>0:00</span><span data-duration>0:00</span></div>
+        </div>
+
+        <div class="controls">
+          <div class="left">
+            <button class="ctrl" aria-label="Shuffle"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 3h5v5"/><path d="M4 20l17-17"/><path d="M21 16v5h-5"/><path d="M15 15l6 6"/><path d="M4 4l5 5"/></svg></button>
+            <button class="ctrl" aria-label="Previous"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M19 5v14L8 12zM6 5h2v14H6z"/></svg></button>
+          </div>
+          <button class="ctrl play-big" data-play-toggle data-play-icon aria-label="Play">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M6 4l14 8-14 8V4z"/></svg>
+          </button>
+          <div class="right">
+            <button class="ctrl" aria-label="Next"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M5 5l11 7-11 7V5zM16 5h2v14h-2z"/></svg></button>
+            <button class="ctrl" aria-label="Repeat"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 1l4 4-4 4"/><path d="M3 11V9a4 4 0 014-4h14"/><path d="M7 23l-4-4 4-4"/><path d="M21 13v2a4 4 0 01-4 4H3"/></svg></button>
+          </div>
+        </div>
+
+        <div class="lyric-strip">
+          <strong>Streaming via</strong>
+          mohd-baquir-qureshi/music-api · falls back across seevn → gaama → mtmusic engines automatically.
+        </div>
+
+        <div style="display:flex;gap:10px;flex-wrap:wrap">
+          <button class="chip">♥ Like</button>
+          <button class="chip">+ Playlist</button>
+          <button class="chip">↓ Download</button>
+          <button class="chip">⋯ Lyrics</button>
+        </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="section-head"><h2>Quick picks</h2><a href="library.html">View library</a></div>
+      <div class="grid">
+        <button class="card" data-play-query="Blinding Lights"><div class="cover v1"></div><h3>Blinding Lights</h3><p>The Weeknd</p><div class="play-fab">▶</div></button>
+        <button class="card" data-play-query="As It Was"><div class="cover v2"></div><h3>As It Was</h3><p>Harry Styles</p><div class="play-fab">▶</div></button>
+        <button class="card" data-play-query="Flowers Miley Cyrus"><div class="cover v3"></div><h3>Flowers</h3><p>Miley Cyrus</p><div class="play-fab">▶</div></button>
+        <button class="card" data-play-query="Calm Down Rema"><div class="cover v4"></div><h3>Calm Down</h3><p>Rema</p><div class="play-fab">▶</div></button>
+        <button class="card" data-play-query="Pasoori"><div class="cover v5"></div><h3>Pasoori</h3><p>Ali Sethi, Shae Gill</p><div class="play-fab">▶</div></button>
+      </div>
+    </section>
+  </main>
+</div>
+<div id="chrome-mini"></div>
+<script src="partials.js"></script>
+<script>mountChrome('player');</script>
+<script src="api.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

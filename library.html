@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>VibeSync — My Library</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+<script>
+if (!localStorage.getItem('vs_user') || !localStorage.getItem('vs_prefs')) {
+  location.replace('welcome.html');
+}
+</script>
+</head>
+<body>
+<div class="app">
+  <div id="chrome-sidebar"></div>
+  <main class="main">
+    <header class="topbar">
+      <div class="nav-arrows">
+        <button class="icon-btn"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg></button>
+        <button class="icon-btn"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6l6 6-6 6"/></svg></button>
+      </div>
+      <div class="search-wrap">
+        <div class="search">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-5-5"/></svg>
+          <input placeholder="Filter your library or search any song…" data-search-input>
+        </div>
+        <div class="search-results" data-search-results></div>
+      </div>
+      <div class="top-actions">
+        <button class="btn-primary">+ New Playlist</button>
+        <div class="avatar">A</div>
+      </div>
+    </header>
+
+    <section style="margin-top:24px;display:flex;align-items:flex-end;justify-content:space-between;gap:24px;flex-wrap:wrap">
+      <div>
+        <h1 style="font-size:34px;font-weight:800;letter-spacing:-0.03em">My Library</h1>
+        <p style="color:var(--muted);margin-top:8px">128 playlists · 2,431 songs · 47h 12m</p>
+      </div>
+      <div class="lib-tabs" role="tablist">
+        <button class="lib-tab active">All</button>
+        <button class="lib-tab">Playlists</button>
+        <button class="lib-tab">Albums</button>
+        <button class="lib-tab">Artists</button>
+        <button class="lib-tab">Songs</button>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="section-head"><h2>Your playlists</h2><a href="#">Sort</a></div>
+      <div class="grid">
+        <button class="card" data-play-query="Top hits 2025"><div class="cover v1"></div><h3>Liked Songs</h3><p>342 songs</p><div class="play-fab">▶</div></button>
+        <button class="card" data-play-query="Midnight City M83"><div class="cover v4"></div><h3>Midnight Drive</h3><p>by you · 58 songs</p><div class="play-fab">▶</div></button>
+        <button class="card" data-play-query="Lofi chill"><div class="cover v2"></div><h3>Lo-Fi Focus</h3><p>by you · 124 songs</p><div class="play-fab">▶</div></button>
+        <button class="card" data-play-query="Morning run mix"><div class="cover v3"></div><h3>Sunrise Run</h3><p>by you · 32 songs</p><div class="play-fab">▶</div></button>
+        <button class="card" data-play-query="Synthwave The Midnight"><div class="cover v10"></div><h3>Synthwave Nights</h3><p>by you · 87 songs</p><div class="play-fab">▶</div></button>
+        <button class="card" data-play-query="Indie bedroom pop"><div class="cover v9"></div><h3>Indie Bedroom</h3><p>by you · 64 songs</p><div class="play-fab">▶</div></button>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="section-head"><h2>Recently saved albums</h2><a href="#">See all</a></div>
+      <div class="grid">
+        <button class="card" data-play-query="Weeknd After Hours"><div class="cover v11"></div><h3>After Hours</h3><p>The Weeknd · 2020</p><div class="play-fab">▶</div></button>
+        <button class="card" data-play-query="Harry Styles Harrys House"><div class="cover v6"></div><h3>Harry's House</h3><p>Harry Styles · 2022</p><div class="play-fab">▶</div></button>
+        <button class="card" data-play-query="Taylor Swift Midnights"><div class="cover v8"></div><h3>Midnights</h3><p>Taylor Swift · 2022</p><div class="play-fab">▶</div></button>
+        <button class="card" data-play-query="Arijit Singh hits"><div class="cover v12"></div><h3>Arijit Singh Best</h3><p>Compilation</p><div class="play-fab">▶</div></button>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="section-head"><h2>Liked songs</h2><a href="#">Play all</a></div>
+      <div class="list">
+        <div class="list-head">
+          <div>#</div><div>Title</div><div class="col-album">Album</div><div>Added</div><div class="col-plays">Plays</div><div>⏱</div>
+        </div>
+        <button class="row" data-play-query="Blinding Lights" style="text-align:left;width:100%;border:0;border-bottom:1px solid var(--border)"><div class="num">1</div><div class="title"><div class="mini-cover cover v1"></div><div class="title-text"><strong>Blinding Lights</strong><span>The Weeknd</span></div></div><div class="album">After Hours</div><div>Today</div><div class="plays">2.4B</div><div class="duration">3:20</div></button>
+        <button class="row" data-play-query="As It Was Harry Styles" style="text-align:left;width:100%;border:0;border-bottom:1px solid var(--border)"><div class="num">2</div><div class="title"><div class="mini-cover cover v2"></div><div class="title-text"><strong>As It Was</strong><span>Harry Styles</span></div></div><div class="album">Harry's House</div><div>2d ago</div><div class="plays">1.8B</div><div class="duration">2:47</div></button>
+        <button class="row" data-play-query="Flowers Miley Cyrus" style="text-align:left;width:100%;border:0;border-bottom:1px solid var(--border)"><div class="num">3</div><div class="title"><div class="mini-cover cover v3"></div><div class="title-text"><strong>Flowers</strong><span>Miley Cyrus</span></div></div><div class="album">Endless Summer Vacation</div><div>3d ago</div><div class="plays">1.5B</div><div class="duration">3:21</div></button>
+        <button class="row" data-play-query="Calm Down Rema Selena Gomez" style="text-align:left;width:100%;border:0;border-bottom:1px solid var(--border)"><div class="num">4</div><div class="title"><div class="mini-cover cover v4"></div><div class="title-text"><strong>Calm Down</strong><span>Rema, Selena Gomez</span></div></div><div class="album">Rave &amp; Roses</div><div>5d ago</div><div class="plays">1.9B</div><div class="duration">3:59</div></button>
+        <button class="row" data-play-query="Anti-Hero Taylor Swift" style="text-align:left;width:100%;border:0;border-bottom:1px solid var(--border)"><div class="num">5</div><div class="title"><div class="mini-cover cover v5"></div><div class="title-text"><strong>Anti-Hero</strong><span>Taylor Swift</span></div></div><div class="album">Midnights</div><div>1w ago</div><div class="plays">1.1B</div><div class="duration">3:20</div></button>
+        <button class="row" data-play-query="Kesariya Brahmastra" style="text-align:left;width:100%;border:0;border-bottom:1px solid var(--border)"><div class="num">6</div><div class="title"><div class="mini-cover cover v6"></div><div class="title-text"><strong>Kesariya</strong><span>Arijit Singh</span></div></div><div class="album">Brahmastra</div><div>1w ago</div><div class="plays">620M</div><div class="duration">4:28</div></button>
+        <button class="row" data-play-query="Pasoori" style="text-align:left;width:100%;border:0;border-bottom:1px solid var(--border)"><div class="num">7</div><div class="title"><div class="mini-cover cover v7"></div><div class="title-text"><strong>Pasoori</strong><span>Ali Sethi, Shae Gill</span></div></div><div class="album">Coke Studio S14</div><div>2w ago</div><div class="plays">740M</div><div class="duration">4:01</div></button>
+        <button class="row" data-play-query="Apna Bana Le Bhediya" style="text-align:left;width:100%;border:0"><div class="num">8</div><div class="title"><div class="mini-cover cover v8"></div><div class="title-text"><strong>Apna Bana Le</strong><span>Arijit Singh</span></div></div><div class="album">Bhediya</div><div>2w ago</div><div class="plays">410M</div><div class="duration">4:06</div></button>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="section-head"><h2>Followed artists</h2><a href="#">See all</a></div>
+      <div class="grid">
+        <button class="card" data-play-query="The Weeknd" style="text-align:center"><div class="cover v6" style="border-radius:50%"></div><h3>The Weeknd</h3><p>120M followers</p></button>
+        <button class="card" data-play-query="Arijit Singh" style="text-align:center"><div class="cover v3" style="border-radius:50%"></div><h3>Arijit Singh</h3><p>90M followers</p></button>
+        <button class="card" data-play-query="Taylor Swift" style="text-align:center"><div class="cover v8" style="border-radius:50%"></div><h3>Taylor Swift</h3><p>110M followers</p></button>
+        <button class="card" data-play-query="Harry Styles" style="text-align:center"><div class="cover v11" style="border-radius:50%"></div><h3>Harry Styles</h3><p>75M followers</p></button>
+        <button class="card" data-play-query="Dua Lipa" style="text-align:center"><div class="cover v9" style="border-radius:50%"></div><h3>Dua Lipa</h3><p>62M followers</p></button>
+        <button class="card" data-play-query="Ed Sheeran" style="text-align:center"><div class="cover v2" style="border-radius:50%"></div><h3>Ed Sheeran</h3><p>112M followers</p></button>
+      </div>
+    </section>
+  </main>
+</div>
+<div id="chrome-mini"></div>
+<script src="partials.js"></script>
+<script>mountChrome('library');</script>
+<script src="api.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
