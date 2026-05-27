@@ -1,20 +1,16 @@
-"""
-Vercel Python entrypoint. Single Flask app exposes /api/search and /api/health.
+"""Vercel serverless function: /api/search?q=<query>&limit=<n>
 
-- /api/search?q=<query>&limit=<n> → JioSaavn search proxy.
-  Decrypts encrypted_media_url (DES/ECB, static key 38346591), upgrades to 320kbps mp4.
-- /api/health → uptime ping.
+JioSaavn proxy. DES-decrypts encrypted_media_url, returns full 320kbps mp4 URL
+plus poster + artist photo. CORS-friendly.
 """
 
 import base64
 import json
 import urllib.parse
 import urllib.request
+from http.server import BaseHTTPRequestHandler
 
-from flask import Flask, jsonify, request
 from Crypto.Cipher import DES
-
-app = Flask(__name__)
 
 DES_KEY = b"38346591"
 UA = (
@@ -93,28 +89,35 @@ def search_songs(query: str, limit: int = 12) -> list:
     return [x for x in out if x["url"]]
 
 
-@app.after_request
-def _cors(resp):
-    resp.headers["Access-Control-Allow-Origin"] = "*"
-    resp.headers["Access-Control-Allow-Methods"] = "GET, OPTIONS"
-    resp.headers["Cache-Control"] = "public, s-maxage=300"
-    return resp
+class handler(BaseHTTPRequestHandler):
+    def do_OPTIONS(self):
+        self.send_response(204)
+        self._cors()
+        self.end_headers()
 
+    def do_GET(self):
+        parsed = urllib.parse.urlparse(self.path)
+        params = urllib.parse.parse_qs(parsed.query)
+        q = (params.get("q") or [""])[0].strip()
+        if not q:
+            self._json({"error": "missing q", "results": []}, 400)
+            return
+        try:
+            limit = int((params.get("limit") or ["10"])[0])
+            self._json({"results": search_songs(q, limit=limit)})
+        except Exception as e:
+            self._json({"error": str(e), "results": []}, 500)
 
-@app.route("/api/health", methods=["GET"])
-def health():
-    return jsonify({"ok": True, "service": "vibesync"})
+    def _cors(self):
+        self.send_header("Access-Control-Allow-Origin", "*")
+        self.send_header("Access-Control-Allow-Methods", "GET, OPTIONS")
+        self.send_header("Cache-Control", "public, s-maxage=300")
 
-
-@app.route("/api/search", methods=["GET", "OPTIONS"])
-def search():
-    if request.method == "OPTIONS":
-        return ("", 204)
-    q = (request.args.get("q") or "").strip()
-    if not q:
-        return jsonify({"error": "missing q", "results": []}), 400
-    try:
-        limit = int(request.args.get("limit", 10))
-        return jsonify({"results": search_songs(q, limit=limit)})
-    except Exception as e:
-        return jsonify({"error": str(e), "results": []}), 500
+    def _json(self, obj, status=200):
+        body = json.dumps(obj).encode("utf-8")
+        self.send_response(status)
+        self.send_header("Content-Type", "application/json")
+        self.send_header("Content-Length", str(len(body)))
+        self._cors()
+        self.end_headers()
+        self.wfile.write(body)

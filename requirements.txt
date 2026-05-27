@@ -1,2 +1,0 @@
-flask>=3.0
-pycryptodome>=3.20
