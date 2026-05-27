@@ -1,16 +1,8 @@
 {
-  "version": 2,
-  "builds": [
-    { "src": "api/**/*.py", "use": "@vercel/python" },
-    { "src": "**/*.html", "use": "@vercel/static" },
-    { "src": "**/*.css", "use": "@vercel/static" },
-    { "src": "**/*.js", "use": "@vercel/static" },
-    { "src": "*.{json,txt,md}", "use": "@vercel/static" }
-  ],
-  "routes": [
-    { "src": "/api/search", "dest": "/api/search.py" },
-    { "src": "/api/health", "dest": "/api/health.py" },
-    { "src": "/", "dest": "/presplash.html" },
-    { "src": "/(.+)", "dest": "/$1" }
+  "cleanUrls": true,
+  "trailingSlash": false,
+  "rewrites": [
+    { "source": "/api/(.*)", "destination": "/api/index" },
+    { "source": "/", "destination": "/presplash" }
   ]
 }

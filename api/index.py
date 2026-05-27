@@ -1,21 +1,26 @@
 """
-Vercel serverless function: /api/search?q=<query>&limit=<n>
+Vercel Python entrypoint. Single Flask app exposes /api/search and /api/health.
 
-JioSaavn search proxy. DES-decrypts encrypted media URL with static key,
-upgrades to 320kbps mp4, returns CORS-friendly JSON with stream URL +
-poster + artist photo. Same logic as local serve.py.
+- /api/search?q=<query>&limit=<n> → JioSaavn search proxy.
+  Decrypts encrypted_media_url (DES/ECB, static key 38346591), upgrades to 320kbps mp4.
+- /api/health → uptime ping.
 """
 
 import base64
 import json
 import urllib.parse
 import urllib.request
-from http.server import BaseHTTPRequestHandler
 
+from flask import Flask, jsonify, request
 from Crypto.Cipher import DES
 
+app = Flask(__name__)
+
 DES_KEY = b"38346591"
-UA = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120 Safari/537.36"
+UA = (
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
+    "(KHTML, like Gecko) Chrome/120 Safari/537.36"
+)
 
 
 def decrypt_url(enc: str) -> str:
@@ -48,7 +53,9 @@ def search_songs(query: str, limit: int = 12) -> list:
         "n": str(limit),
     })
     url = f"https://www.jiosaavn.com/api.php?__call=search.getResults&{qs}"
-    req = urllib.request.Request(url, headers={"User-Agent": UA, "Accept": "application/json"})
+    req = urllib.request.Request(
+        url, headers={"User-Agent": UA, "Accept": "application/json"}
+    )
     with urllib.request.urlopen(req, timeout=10) as r:
         data = json.loads(r.read().decode("utf-8"))
 
@@ -59,11 +66,15 @@ def search_songs(query: str, limit: int = 12) -> list:
         stream = ""
         if enc:
             try:
-                stream = upgrade_quality(decrypt_url(enc), "320" if info.get("320kbps") == "true" else "160")
+                stream = upgrade_quality(
+                    decrypt_url(enc),
+                    "320" if info.get("320kbps") == "true" else "160",
+                )
             except Exception:
                 pass
         artists = info.get("artistMap", {}).get("primary_artists", []) or []
-        artist_name = ", ".join(a.get("name", "") for a in artists[:3]) or s.get("subtitle", "").split("-")[0].strip()
+        artist_name = ", ".join(a.get("name", "") for a in artists[:3]) or \
+            s.get("subtitle", "").split("-")[0].strip()
         artist_img = ""
         if artists:
             artist_img = (artists[0].get("image", "") or "").replace("150x150", "500x500")
@@ -82,36 +93,28 @@ def search_songs(query: str, limit: int = 12) -> list:
     return [x for x in out if x["url"]]
 
 
-class handler(BaseHTTPRequestHandler):
-    def do_OPTIONS(self):
-        self.send_response(204)
-        self._cors()
-        self.end_headers()
+@app.after_request
+def _cors(resp):
+    resp.headers["Access-Control-Allow-Origin"] = "*"
+    resp.headers["Access-Control-Allow-Methods"] = "GET, OPTIONS"
+    resp.headers["Cache-Control"] = "public, s-maxage=300"
+    return resp
 
-    def do_GET(self):
-        parsed = urllib.parse.urlparse(self.path)
-        params = urllib.parse.parse_qs(parsed.query)
-        q = (params.get("q") or [""])[0].strip()
-        if not q:
-            self._json({"error": "missing q", "results": []}, 400)
-            return
-        try:
-            limit = int((params.get("limit") or ["10"])[0])
-            results = search_songs(q, limit=limit)
-            self._json({"results": results})
-        except Exception as e:
-            self._json({"error": str(e), "results": []}, 500)
 
-    def _cors(self):
-        self.send_header("Access-Control-Allow-Origin", "*")
-        self.send_header("Access-Control-Allow-Methods", "GET, OPTIONS")
-        self.send_header("Cache-Control", "public, s-maxage=300")
+@app.route("/api/health", methods=["GET"])
+def health():
+    return jsonify({"ok": True, "service": "vibesync"})
 
-    def _json(self, obj, status=200):
-        body = json.dumps(obj).encode("utf-8")
-        self.send_response(status)
-        self.send_header("Content-Type", "application/json")
-        self.send_header("Content-Length", str(len(body)))
-        self._cors()
-        self.end_headers()
-        self.wfile.write(body)
+
+@app.route("/api/search", methods=["GET", "OPTIONS"])
+def search():
+    if request.method == "OPTIONS":
+        return ("", 204)
+    q = (request.args.get("q") or "").strip()
+    if not q:
+        return jsonify({"error": "missing q", "results": []}), 400
+    try:
+        limit = int(request.args.get("limit", 10))
+        return jsonify({"results": search_songs(q, limit=limit)})
+    except Exception as e:
+        return jsonify({"error": str(e), "results": []}), 500
