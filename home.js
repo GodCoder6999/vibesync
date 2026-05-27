@@ -154,13 +154,16 @@ function cssEsc(s) { return CSS.escape ? CSS.escape(s) : s.replace(/["\\]/g, '\\
 // ---------- Spotify home (when connected) ----------
 async function renderSpotifyHome() {
   const sp = window.sp;
+  const errors = [];
+  const wrap = (name, p) => p.catch(e => { errors.push(`${name}: ${e.message}`); return null; });
   const [recent, top, playlists, newRel, featured] = await Promise.all([
-    sp.recent().catch(() => null),
-    sp.topTracks().catch(() => null),
-    sp.playlists().catch(() => null),
-    sp.newReleases().catch(() => null),
-    sp.featured().catch(() => null)
+    wrap('recent', sp.recent()),
+    wrap('topTracks', sp.topTracks()),
+    wrap('playlists', sp.playlists()),
+    wrap('newReleases', sp.newReleases()),
+    wrap('featured', sp.featured())
   ]);
+  if (errors.length) console.warn('[spotify] API errors:', errors);
 
   // Shortcuts: top 6 from recent or playlists
   const shortTracks = [];
@@ -183,6 +186,27 @@ async function renderSpotifyHome() {
   if (newRel?.albums?.items) sections.push(['New Releases', newRel.albums.items.map(spotifyAlbumToTrack)]);
   if (featured?.playlists?.items) sections.push(['Featured Playlists', featured.playlists.items.map(spotifyPlaylistToCard)]);
   if (playlists?.items)   sections.push(['Your Playlists', playlists.items.map(spotifyPlaylistToCard)]);
+
+  // Diagnostic if Spotify returned nothing
+  if (!sections.length) {
+    document.getElementById('dynSections').innerHTML = `
+      <div style="padding:32px;max-width:680px;color:var(--muted);line-height:1.6">
+        <h2 style="color:var(--text);margin-bottom:12px">Spotify connected but no data</h2>
+        <p>Token works, but every API call returned empty/error. Most common reason:</p>
+        <p style="margin-top:12px"><strong style="color:var(--text)">App is in Development Mode.</strong> Spotify only lets you call API for the owner + explicitly added test users.</p>
+        <ol style="margin:14px 0 14px 20px;color:var(--text)">
+          <li>Open <a href="https://developer.spotify.com/dashboard" target="_blank" style="color:var(--accent)">developer.spotify.com/dashboard</a></li>
+          <li>Click your VibeSync app → <strong>User Management</strong></li>
+          <li>Click <strong>Add new user</strong> → enter your Spotify display name + email</li>
+          <li>Save → refresh this page</li>
+        </ol>
+        ${errors.length ? `<details style="margin-top:16px"><summary style="cursor:pointer">API errors (${errors.length})</summary><pre style="background:var(--surface);padding:12px;border-radius:6px;margin-top:8px;font-size:12px;white-space:pre-wrap">${esc(errors.join('\n'))}</pre></details>` : ''}
+        <p style="margin-top:20px"><a href="#" onclick="window.spotifyLogout();location.reload();return false;" style="color:var(--accent)">Disconnect Spotify and use JioSaavn-only mode</a></p>
+      </div>`;
+    document.getElementById('shortcuts').innerHTML = '';
+    bindLogout();
+    return;
+  }
 
   document.getElementById('dynSections').innerHTML = sections.map(([title, tracks]) => `
     <section class="section">
