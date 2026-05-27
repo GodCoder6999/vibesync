@@ -89,6 +89,17 @@ async function doRender() {
     }
   }
 
+  // Show/hide Connect Spotify CTA based on connection state
+  const spBtn = document.getElementById('spotifyConnectBtn');
+  if (spBtn) {
+    if (window.isSpotifyConnected && window.isSpotifyConnected()) {
+      spBtn.style.display = 'none';
+    } else {
+      spBtn.style.display = 'inline-flex';
+      spBtn.onclick = () => window.spotifyLogin();
+    }
+  }
+
   // If Spotify connected, render real Spotify home + return
   if (window.isSpotifyConnected && window.isSpotifyConnected()) {
     try { return await renderSpotifyHome(); }
