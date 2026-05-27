@@ -1,8 +1,5 @@
 {
-  "cleanUrls": true,
-  "trailingSlash": false,
   "rewrites": [
-    { "source": "/api/(.*)", "destination": "/api/index" },
-    { "source": "/", "destination": "/presplash" }
+    { "source": "/api/:path*", "destination": "/api/index" }
   ]
 }
