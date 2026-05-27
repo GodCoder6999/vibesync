@@ -1,4 +1,8 @@
 {
+  "framework": null,
+  "buildCommand": "",
+  "installCommand": "echo no-install",
+  "outputDirectory": ".",
   "rewrites": [
     { "source": "/", "destination": "/presplash.html" }
   ]
