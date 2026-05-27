@@ -30,29 +30,8 @@ async function doRender() {
   const langs = (full?.languages || []).map(l => langMap[l]).filter(Boolean);
   const lang = langs.length ? langs.join(',') : 'hindi,english';
 
-  // ----- Try Spotify-anon home FIRST (real Spotify catalog) -----
-  let useSpotify = false;
-  let spHome = null;
-  try {
-    const tok = await window.cat.spToken();
-    if (tok?.ok) {
-      spHome = await window.cat.spHome('US');
-      if (spHome && !spHome.error && ((spHome.new_releases || []).length + (spHome.featured || []).length) > 0) {
-        useSpotify = true;
-        console.log('[home] using Spotify-anon catalog');
-      }
-    }
-  } catch (e) { console.warn('[home] spotify-anon unavailable, falling back to JioSaavn', e); }
-
-  // ----- Fetch JioSaavn home as fallback (always loaded for user-pref rows below) -----
+  // ----- Fetch JioSaavn home (Spotify direct catalog blocked from datacenter IPs) -----
   const home = await window.cat.home(lang).catch(e => { console.warn('home fail', e); return {}; });
-
-  // If Spotify path active, override charts/playlists with Spotify data
-  if (useSpotify) {
-    home.charts = spHome.featured || [];
-    home.new_albums = spHome.new_releases || [];
-    home.playlists = spHome.categories || [];
-  }
 
   // SHORTCUTS: top 6 from charts + playlists (mix)
   const shortcuts = [
@@ -69,12 +48,9 @@ async function doRender() {
   // SECTIONS in order: Charts, New Releases, Featured Playlists, then artist/genre rows
   const container = document.getElementById('dynSections');
   const sections = [];
-  const SECTION_LABELS = useSpotify
-    ? ['Featured Playlists', 'New Releases', 'Browse Categories']
-    : ['Today\'s Top Hits', 'New Releases', 'Made For You'];
-  if (home.charts?.length)      sections.push({ title: SECTION_LABELS[0], items: home.charts });
-  if (home.new_albums?.length)  sections.push({ title: SECTION_LABELS[1], items: home.new_albums });
-  if (home.playlists?.length)   sections.push({ title: SECTION_LABELS[2], items: home.playlists });
+  if (home.charts?.length)      sections.push({ title: "Today's Top Hits",  items: home.charts });
+  if (home.new_albums?.length)  sections.push({ title: 'New Releases',       items: home.new_albums });
+  if (home.playlists?.length)   sections.push({ title: 'Made For You',       items: home.playlists });
 
   // Render JioSaavn home sections (tiles open by search-and-play)
   container.innerHTML = sections.map(sec => `
@@ -98,7 +74,7 @@ async function doRender() {
   if (ordered.length) {
     container.innerHTML += ordered.map(p => `
       <section class="section" data-pref="${escAttr(p)}">
-        <div class="section-head"><h2>${esc('More from ' + p)}</h2><a href="#">Show all</a></div>
+        <div class="section-head"><h2>${esc(p + ' Mix')}</h2><a href="#">Show all</a></div>
         <div class="h-scroll skel">${'<div class="card" style="opacity:0.3;flex:0 0 180px"><div class="cover"></div><h3>&nbsp;</h3><p>&nbsp;</p></div>'.repeat(5)}</div>
       </section>`).join('');
 

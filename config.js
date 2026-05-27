@@ -1,6 +1,6 @@
 // VibeSync runtime config.
-// API_BASE: where /api/* calls go. Leave empty to use same-origin (Vercel functions).
-// Set to Render URL once deployed: e.g. https://vibesync-api.onrender.com
+// API_BASE: Render-hosted Flask backend (JioSaavn proxy + LrcLib).
+// Frontend on Vercel calls these endpoints cross-origin.
 window.VS_CONFIG = {
-  API_BASE: 'https://vibesync-api.onrender.com'  // ← Change to your Render URL after first deploy
+  API_BASE: 'https://vibesync-4y9t.onrender.com'
 };
