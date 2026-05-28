@@ -27,7 +27,9 @@ window.cat = {
 
   // Spotify catalog via SpotAPI (real Spotify IDs + metadata, scraped)
   sxHome:     () => _fetch('/api/sx-home'),
-  sxSearch:   (q, limit = 10) => _fetch(`/api/sx-search?q=${encodeURIComponent(q)}&limit=${limit}`),
+  sxSearch:   (q, limit = 8) => _fetch(`/api/sx-search?q=${encodeURIComponent(q)}&limit=${limit}`),
+  sxPodcast:  (id) => _fetch(`/api/sx-podcast?id=${encodeURIComponent(id)}`),
+  sxEpisode:  (id) => _fetch(`/api/sx-episode?id=${encodeURIComponent(id)}`),
   sxPlaylist: (id) => _fetch(`/api/sx-playlist?id=${encodeURIComponent(id)}`),
   sxAlbum:    (id) => _fetch(`/api/sx-album?id=${encodeURIComponent(id)}`),
   sxArtist:   (opts) => {

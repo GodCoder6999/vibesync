@@ -22,7 +22,11 @@ async function renderDetail(type) {
 
   try {
     let data;
-    if (src === 'sx' || src === 'rx') {
+    if (type === 'podcast') {
+      data = await window.cat.sxPodcast(id);
+    } else if (type === 'episode') {
+      data = await window.cat.sxEpisode(id);
+    } else if (src === 'sx' || src === 'rx') {
       if (type === 'playlist') data = await window.cat.sxPlaylist(id);
       else if (type === 'album') data = await window.cat.sxAlbum(id);
       else if (type === 'artist') data = await window.cat.sxArtist(id ? { id } : { name });
@@ -34,6 +38,8 @@ async function renderDetail(type) {
     if (!data || data.error) throw new Error(data?.error || 'No data');
 
     if (type === 'artist') renderArtist(content, data);
+    else if (type === 'podcast') renderPodcast(content, data);
+    else if (type === 'episode') renderEpisode(content, data);
     else renderPlaylistOrAlbum(content, type, data, cover);
   } catch (e) {
     content.innerHTML = `<div style="padding:80px 24px;color:#ff6b6b">Failed to load: ${esc(e.message)}</div>`;
@@ -163,6 +169,82 @@ async function renderArtist(content, data) {
   const playAll = document.getElementById('playAll');
   if (playAll) playAll.addEventListener('click', () => {
     if (window.vsSetQueue && tracks.length) window.vsSetQueue(tracks, 0);
+  });
+}
+
+function renderPodcast(content, data) {
+  const eps = data.episodes || [];
+  const heroColor = pickHeroColor(data.title || '');
+  content.innerHTML = `
+    <div class="page-hero" style="--hero-color:${heroColor}">
+      <div class="page-hero-inner">
+        <div class="page-hero-art" ${data.img ? `style="background-image:url(&quot;${data.img}&quot;)"` : ''}></div>
+        <div class="page-hero-info">
+          <div class="type">Podcast</div>
+          <h1>${esc(data.title || '')}</h1>
+          <div class="meta">
+            <strong>${esc(data.subtitle || '')}</strong>
+            ${eps.length ? `<span class="meta-dot"></span><span>${eps.length} episode${eps.length===1?'':'s'}</span>` : ''}
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="action-bar">
+      <button class="play-big" id="playAll"><svg viewBox="0 0 16 16" fill="currentColor"><path d="M3 1.713a.7.7 0 0 1 1.05-.607l10.89 6.288a.7.7 0 0 1 0 1.212L4.05 14.894A.7.7 0 0 1 3 14.288V1.713z"/></svg></button>
+      <button class="follow-btn">Follow</button>
+    </div>
+    ${data.description ? `<p style="padding:0 24px 16px;color:var(--text-muted);max-width:800px">${esc(data.description)}</p>` : ''}
+    <section class="section">
+      <div class="section-head"><h2>All Episodes</h2></div>
+      <div class="song-table">
+        ${eps.map((ep, i) => `
+          <button class="row" data-idx="${i}">
+            <div class="num">${i+1}</div>
+            <div class="title-cell">
+              <div class="row-cover" ${ep.img ? `style="background-image:url(&quot;${ep.img}&quot;)"` : ''}></div>
+              <div class="title-text"><strong>${esc(ep.title)}</strong><span>${esc(ep.subtitle || '')}</span></div>
+            </div>
+            <div>${esc(ep.release_date ? ep.release_date.slice(0,10) : '')}</div>
+            <div></div>
+            <div class="duration">${fmt(ep.duration)}</div>
+          </button>`).join('')}
+      </div>
+    </section>`;
+  content.querySelectorAll('.row[data-idx]').forEach(r => {
+    r.addEventListener('click', () => {
+      const i = parseInt(r.dataset.idx, 10);
+      if (window.vsSetQueue) window.vsSetQueue(eps, i);
+    });
+  });
+  document.getElementById('playAll')?.addEventListener('click', () => {
+    if (window.vsSetQueue && eps.length) window.vsSetQueue(eps, 0);
+  });
+}
+
+function renderEpisode(content, data) {
+  const heroColor = pickHeroColor(data.title || '');
+  content.innerHTML = `
+    <div class="page-hero" style="--hero-color:${heroColor}">
+      <div class="page-hero-inner">
+        <div class="page-hero-art" ${data.img ? `style="background-image:url(&quot;${data.img}&quot;)"` : ''}></div>
+        <div class="page-hero-info">
+          <div class="type">Episode</div>
+          <h1>${esc(data.title || '')}</h1>
+          <div class="meta">
+            <strong>${esc(data.subtitle || '')}</strong>
+            ${data.release_date ? `<span class="meta-dot"></span><span>${esc(data.release_date.slice(0,10))}</span>` : ''}
+            ${data.duration ? `<span class="meta-dot"></span><span>${fmt(data.duration)}</span>` : ''}
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="action-bar">
+      <button class="play-big" id="playEp"><svg viewBox="0 0 16 16" fill="currentColor"><path d="M3 1.713a.7.7 0 0 1 1.05-.607l10.89 6.288a.7.7 0 0 1 0 1.212L4.05 14.894A.7.7 0 0 1 3 14.288V1.713z"/></svg></button>
+    </div>
+    ${data.description ? `<div style="padding:0 24px 24px;color:var(--text-muted);max-width:800px;line-height:1.6">${esc(data.description)}</div>` : ''}
+    ${data.podcast_id ? `<a href="podcast.html?id=${encodeURIComponent(data.podcast_id)}" style="display:inline-block;margin:0 24px;color:var(--accent)">← Back to podcast</a>` : ''}`;
+  document.getElementById('playEp')?.addEventListener('click', () => {
+    if (window.vsSetQueue) window.vsSetQueue([data], 0);
   });
 }
 

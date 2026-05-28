@@ -130,38 +130,129 @@ async function runQueryFromUrl() {
 async function runSearch(q) {
   const area = document.getElementById('resultsArea');
   area.innerHTML = `<section class="section"><div class="section-head"><h2>Searching “${esc(q)}”…</h2></div></section>`;
-  const data = await window.cat.search(q, 12);
-  const tracks = (data.results || []).filter(t => {
-    const s = (t.title || '').toLowerCase();
-    return !s.includes('karaoke') && !s.includes('instrumental');
-  }).slice(0, 12);
-  if (!tracks.length) {
-    area.innerHTML = `<section class="section"><div class="section-head"><h2>No results for “${esc(q)}”</h2></div></section>`;
-    document.getElementById('browseSection').style.display = 'block';
+
+  // Try Spotify first; fall back to JioSaavn if Spotify fails / empty
+  let sx = {};
+  try { sx = await window.cat.sxSearch(q, 8); } catch {}
+  const tracks   = sx.tracks    || [];
+  const albums   = sx.albums    || [];
+  const artists  = sx.artists   || [];
+  const playlists= sx.playlists || [];
+  const podcasts = sx.podcasts  || [];
+  const top      = sx.top_result;
+
+  if (!tracks.length && !albums.length && !artists.length && !playlists.length) {
+    // JioSaavn fallback
+    const data = await window.cat.search(q, 12);
+    const jio = (data.results || []).filter(t => !/karaoke|instrumental/i.test(t.title || '')).slice(0, 12);
+    if (!jio.length) {
+      area.innerHTML = `<section class="section"><div class="section-head"><h2>No results for “${esc(q)}”</h2></div></section>`;
+      document.getElementById('browseSection').style.display = 'block';
+      return;
+    }
+    document.getElementById('browseSection').style.display = 'none';
+    area.innerHTML = trackRowSection('Songs', jio);
+    bindAreaClicks(area, jio);
     return;
   }
-  document.getElementById('browseSection').style.display = 'none';
-  area.innerHTML = `
-    <section class="section">
-      <div class="section-head"><h2>Top results</h2></div>
-      <div class="card-row fluid">
-        ${tracks.map(t => `
-          <button class="card" data-track-json='${escAttr(JSON.stringify(t))}'>
-            <div class="card-cover" ${t.img ? `style="background-image:url(&quot;${t.img}&quot;)"` : ''}></div>
-            <h3>${esc(t.title)}</h3>
-            <p>${esc(t.artist || '')}</p>
-            <div class="card-fab"><svg viewBox="0 0 16 16" fill="currentColor"><path d="M3 1.713a.7.7 0 0 1 1.05-.607l10.89 6.288a.7.7 0 0 1 0 1.212L4.05 14.894A.7.7 0 0 1 3 14.288V1.713z"/></svg></div>
-          </button>`).join('')}
-      </div>
-    </section>`;
 
-  // Wire click on result cards → play + set queue
-  area.querySelectorAll('[data-track-json]').forEach((c, i) => {
+  document.getElementById('browseSection').style.display = 'none';
+
+  // Top result hero (big card) + first 4 tracks side-by-side
+  const topCard = top ? `
+    <section class="section search-top">
+      <div class="section-head"><h2>Top result</h2></div>
+      <div class="top-result-grid">
+        <button class="top-result-card" data-cat-tile='${escAttr(JSON.stringify(top))}'>
+          <div class="trc-cover" ${top.img ? `style="background-image:url(&quot;${top.img}&quot;)"` : ''}></div>
+          <h3>${esc(top.title)}</h3>
+          <p>${esc(top.artist || top.subtitle || '')}</p>
+          <span class="trc-type">${esc(({tracks:'Song','sx-artist':'Artist','sx-album':'Album','sx-playlist':'Playlist'}[top.type] || 'Track'))}</span>
+          <div class="trc-fab"><svg viewBox="0 0 16 16" fill="currentColor"><path d="M3 1.713a.7.7 0 0 1 1.05-.607l10.89 6.288a.7.7 0 0 1 0 1.212L4.05 14.894A.7.7 0 0 1 3 14.288V1.713z"/></svg></div>
+        </button>
+        <div class="search-songs">
+          <h3 class="ss-head">Songs</h3>
+          ${tracks.slice(0, 4).map(t => `
+            <div class="ss-row" data-track-json='${escAttr(JSON.stringify(t))}'>
+              <div class="ss-cover" ${t.img ? `style="background-image:url(&quot;${t.img}&quot;)"` : ''}></div>
+              <div class="ss-info"><strong>${esc(t.title)}</strong><span>${esc(t.artist || '')}</span></div>
+              <div class="ss-dur">${fmtDur(t.duration)}</div>
+            </div>`).join('')}
+        </div>
+      </div>
+    </section>` : '';
+
+  const sections = [topCard];
+  if (artists.length)   sections.push(tileRowSection('Artists', artists, true));
+  if (albums.length)    sections.push(tileRowSection('Albums', albums));
+  if (playlists.length) sections.push(tileRowSection('Playlists', playlists));
+  if (podcasts.length)  sections.push(tileRowSection('Podcasts & Shows', podcasts));
+
+  area.innerHTML = sections.join('');
+  bindAreaClicks(area, tracks);
+}
+
+function tileRowSection(title, items, circle = false) {
+  return `<section class="section">
+    <div class="section-head"><h2>${esc(title)}</h2></div>
+    <div class="card-row">
+      ${items.map(it => `
+        <button class="card${circle ? ' artist' : ''}" data-cat-tile='${escAttr(JSON.stringify(it))}'>
+          <div class="card-cover" ${it.img ? `style="background-image:url(&quot;${it.img}&quot;)"` : ''}></div>
+          <h3>${esc(it.title)}</h3>
+          <p>${esc(it.subtitle || '')}</p>
+          <div class="card-fab"><svg viewBox="0 0 16 16" fill="currentColor"><path d="M3 1.713a.7.7 0 0 1 1.05-.607l10.89 6.288a.7.7 0 0 1 0 1.212L4.05 14.894A.7.7 0 0 1 3 14.288V1.713z"/></svg></div>
+        </button>`).join('')}
+    </div>
+  </section>`;
+}
+
+function trackRowSection(title, tracks) {
+  return `<section class="section">
+    <div class="section-head"><h2>${esc(title)}</h2></div>
+    <div class="card-row">
+      ${tracks.map(t => `
+        <button class="card" data-track-json='${escAttr(JSON.stringify(t))}'>
+          <div class="card-cover" ${t.img ? `style="background-image:url(&quot;${t.img}&quot;)"` : ''}></div>
+          <h3>${esc(t.title)}</h3>
+          <p>${esc(t.artist || '')}</p>
+          <div class="card-fab"><svg viewBox="0 0 16 16" fill="currentColor"><path d="M3 1.713a.7.7 0 0 1 1.05-.607l10.89 6.288a.7.7 0 0 1 0 1.212L4.05 14.894A.7.7 0 0 1 3 14.288V1.713z"/></svg></div>
+        </button>`).join('')}
+    </div>
+  </section>`;
+}
+
+function bindAreaClicks(area, trackList) {
+  area.querySelectorAll('[data-track-json]').forEach((c) => {
     c.addEventListener('click', (e) => {
       e.preventDefault();
-      try { window.vsSetQueue(tracks, i); } catch {}
+      try {
+        const t = JSON.parse(c.getAttribute('data-track-json'));
+        const idx = trackList.findIndex(x => x.id === t.id);
+        window.vsSetQueue(trackList, idx >= 0 ? idx : 0);
+      } catch {}
     });
   });
+  area.querySelectorAll('[data-cat-tile]').forEach(c => {
+    c.addEventListener('click', (e) => {
+      e.preventDefault();
+      try {
+        const it = JSON.parse(c.getAttribute('data-cat-tile'));
+        if (it.type === 'sx-playlist') location.href = `playlist.html?id=${encodeURIComponent(it.id)}&src=sx`;
+        else if (it.type === 'sx-album')    location.href = `album.html?id=${encodeURIComponent(it.id)}&src=sx`;
+        else if (it.type === 'sx-artist')   location.href = `artist.html?id=${encodeURIComponent(it.id)}&src=sx`;
+        else if (it.type === 'sx-podcast')  location.href = `podcast.html?id=${encodeURIComponent(it.id)}`;
+        else if (it.type === 'sx-episode')  location.href = `episode.html?id=${encodeURIComponent(it.id)}`;
+        else if (it.query) window.searchAndPlay(it.query);
+      } catch {}
+    });
+  });
+}
+
+function fmtDur(s) {
+  if (!s) return '';
+  const m = Math.floor(s/60), sec = String(Math.floor(s%60)).padStart(2,'0');
+  return `${m}:${sec}`;
 }
 
 document.getElementById('exploreInput').addEventListener('keydown', (e) => {

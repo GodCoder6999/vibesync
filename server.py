@@ -434,26 +434,183 @@ def sx_health():
 
 @app.route("/api/sx-search")
 def sx_search():
+    """Multi-type Spotify search: returns tracks, albums, artists, playlists,
+    podcasts, episodes as separate lists (Spotify-style search-results page)."""
     q = (request.args.get("q") or "").strip()
     if not q:
         return jsonify(error="missing q"), 400
-    limit = int(request.args.get("limit", 10))
+    limit = int(request.args.get("limit", 8))
     try:
         sa = _spotapi()
         song = sa.Song()
         data = song.query_songs(q, limit=limit)
-        items = data.get("data", {}).get("searchV2", {}).get("tracksV2", {}).get("items", []) if isinstance(data, dict) else []
-        if not items:
-            items = data.get("tracks", []) if isinstance(data, dict) else []
+        sv2 = ((data.get("data") or {}).get("searchV2")) if isinstance(data, dict) else {}
+        sv2 = sv2 or {}
+
+        # Tracks
         tracks = []
-        for i, it in enumerate(items[:limit]):
-            t = it.get("item", {}).get("data") if isinstance(it.get("item"), dict) else it
+        for i, it in enumerate(((sv2.get("tracksV2") or {}).get("items") or [])[:limit]):
+            t = (it.get("item") or {}).get("data") if isinstance(it.get("item"), dict) else it
             tile = _sx_track_to_tile(t, i)
             if tile:
                 tracks.append(tile)
-        return jsonify(tracks=tracks)
+
+        # Albums
+        albums = []
+        for it in ((sv2.get("albums") or {}).get("items") or [])[:limit]:
+            d = (it.get("data") if isinstance(it.get("data"), dict) else it) or {}
+            uri = d.get("uri") or ""
+            albums.append({
+                "id": uri.split(":")[-1] if uri else d.get("id", ""),
+                "title": d.get("name") or "",
+                "subtitle": _sx_artists(d) or "Album",
+                "img": _sx_img(d.get("coverArt") or d),
+                "type": "sx-album",
+                "year": str((d.get("date") or {}).get("year") or "")[:4] if isinstance(d.get("date"), dict) else "",
+            })
+
+        # Artists
+        artists = []
+        for it in ((sv2.get("artists") or {}).get("items") or [])[:limit]:
+            d = (it.get("data") if isinstance(it.get("data"), dict) else it) or {}
+            uri = d.get("uri") or ""
+            profile = d.get("profile") or {}
+            visuals = d.get("visuals") or {}
+            artists.append({
+                "id": uri.split(":")[-1] if uri else d.get("id", ""),
+                "title": profile.get("name") or d.get("name") or "",
+                "subtitle": "Artist",
+                "img": _sx_img(visuals.get("avatarImage") or d.get("images") or {}),
+                "type": "sx-artist",
+            })
+
+        # Playlists
+        playlists = []
+        for it in ((sv2.get("playlists") or {}).get("items") or [])[:limit]:
+            d = (it.get("data") if isinstance(it.get("data"), dict) else it) or {}
+            uri = d.get("uri") or ""
+            owner = ""
+            ov2 = d.get("ownerV2")
+            if isinstance(ov2, dict) and isinstance(ov2.get("data"), dict):
+                owner = ov2["data"].get("name") or ""
+            playlists.append({
+                "id": uri.split(":")[-1] if uri else d.get("id", ""),
+                "title": d.get("name") or "",
+                "subtitle": "By " + owner if owner else "Playlist",
+                "img": _sx_img(d.get("images") or d),
+                "type": "sx-playlist",
+            })
+
+        # Podcasts (podcastsV2 in newer responses, audiobooks too)
+        podcasts = []
+        for it in ((sv2.get("podcasts") or sv2.get("podcastsV2") or {}).get("items") or [])[:limit]:
+            d = (it.get("data") if isinstance(it.get("data"), dict) else it) or {}
+            uri = d.get("uri") or ""
+            podcasts.append({
+                "id": uri.split(":")[-1] if uri else d.get("id", ""),
+                "title": d.get("name") or "",
+                "subtitle": d.get("publisher", {}).get("name") if isinstance(d.get("publisher"), dict) else "Podcast",
+                "img": _sx_img(d.get("coverArt") or d),
+                "type": "sx-podcast",
+            })
+
+        # Episodes
+        episodes = []
+        for it in ((sv2.get("episodes") or {}).get("items") or [])[:limit]:
+            d = (it.get("data") if isinstance(it.get("data"), dict) else it) or {}
+            uri = d.get("uri") or ""
+            episodes.append({
+                "id": uri.split(":")[-1] if uri else d.get("id", ""),
+                "title": d.get("name") or "",
+                "subtitle": d.get("podcastV2", {}).get("data", {}).get("name") if isinstance(d.get("podcastV2"), dict) else "Episode",
+                "img": _sx_img(d.get("coverArt") or d),
+                "type": "sx-episode",
+                "duration": (d.get("duration") or {}).get("totalMilliseconds", 0) // 1000 if isinstance(d.get("duration"), dict) else 0,
+            })
+
+        return jsonify(
+            tracks=tracks, albums=albums, artists=artists,
+            playlists=playlists, podcasts=podcasts, episodes=episodes,
+            top_result=tracks[0] if tracks else (artists[0] if artists else (albums[0] if albums else None)),
+        )
     except Exception as e:
-        return jsonify(error=str(e), tracks=[]), 500
+        return jsonify(error=str(e), tracks=[], albums=[], artists=[], playlists=[], podcasts=[], episodes=[]), 500
+
+
+@app.route("/api/sx-podcast")
+def sx_podcast():
+    """Podcast metadata + episodes."""
+    pid = (request.args.get("id") or "").strip()
+    if not pid:
+        return jsonify(error="missing id"), 400
+    key = f"pod:{pid}"
+    if key in _sx_cache:
+        return jsonify(_sx_cache[key])
+    try:
+        sa = _spotapi()
+        pod = sa.Podcast(pid)
+        info = pod.get_podcast_info(limit=50)
+        root = ((info.get("data") or {}).get("podcastUnionV2")) or ((info.get("data") or {}).get("podcastUnion")) or info or {}
+        ev2 = root.get("episodesV2") or root.get("episodes") or {}
+        items_raw = ev2.get("items") if isinstance(ev2, dict) else (ev2 or [])
+        episodes = []
+        for it in (items_raw or []):
+            d = (it.get("entity") or {}).get("data") if isinstance(it.get("entity"), dict) else (
+                (it.get("episode") or {}).get("data") if isinstance(it.get("episode"), dict) else it
+            )
+            d = d or {}
+            uri = d.get("uri") or ""
+            episodes.append({
+                "id": uri.split(":")[-1] if uri else d.get("id", ""),
+                "title": d.get("name") or "",
+                "subtitle": (d.get("description") or "")[:100],
+                "img": _sx_img(d.get("coverArt") or d),
+                "duration": (d.get("duration") or {}).get("totalMilliseconds", 0) // 1000 if isinstance(d.get("duration"), dict) else 0,
+                "release_date": (d.get("releaseDate") or {}).get("isoString", "") if isinstance(d.get("releaseDate"), dict) else "",
+            })
+        publisher = (root.get("publisher") or {}).get("name") if isinstance(root.get("publisher"), dict) else ""
+        out = {
+            "id": pid,
+            "title": root.get("name") or "",
+            "subtitle": publisher,
+            "description": root.get("description") or "",
+            "img": _sx_img(root.get("coverArt") or root),
+            "episodes": episodes,
+        }
+        _sx_cache[key] = out
+        return jsonify(out)
+    except Exception as e:
+        return jsonify(error=str(e), episodes=[]), 500
+
+
+@app.route("/api/sx-episode")
+def sx_episode():
+    """Single podcast episode."""
+    eid = (request.args.get("id") or "").strip()
+    if not eid:
+        return jsonify(error="missing id"), 400
+    key = f"ep:{eid}"
+    if key in _sx_cache:
+        return jsonify(_sx_cache[key])
+    try:
+        sa = _spotapi()
+        pod = sa.Podcast()
+        info = pod.get_episode(eid)
+        d = ((info.get("data") or {}).get("episodeUnionV2")) or ((info.get("data") or {}).get("episode")) or info or {}
+        out = {
+            "id": eid,
+            "title": d.get("name") or "",
+            "subtitle": (d.get("podcastV2") or {}).get("data", {}).get("name") if isinstance(d.get("podcastV2"), dict) else "Episode",
+            "description": d.get("description") or "",
+            "img": _sx_img(d.get("coverArt") or d),
+            "duration": (d.get("duration") or {}).get("totalMilliseconds", 0) // 1000 if isinstance(d.get("duration"), dict) else 0,
+            "release_date": (d.get("releaseDate") or {}).get("isoString", "") if isinstance(d.get("releaseDate"), dict) else "",
+            "podcast_id": ((d.get("podcastV2") or {}).get("data", {}).get("uri", "").split(":")[-1]) if isinstance(d.get("podcastV2"), dict) else "",
+        }
+        _sx_cache[key] = out
+        return jsonify(out)
+    except Exception as e:
+        return jsonify(error=str(e)), 500
 
 
 @app.route("/api/sx-playlist")
