@@ -269,77 +269,149 @@ def lyrics():
 _sx_cache = {}  # id -> normalized dict (cuts duplicate scrapes)
 
 
+def _is_url(s) -> bool:
+    return isinstance(s, str) and (s.startswith("http://") or s.startswith("https://"))
+
+
 def _sx_img(obj) -> str:
-    """Extract image URL from messy SpotAPI shapes."""
+    """Extract a real http(s) image URL from Spotify GraphQL shapes.
+
+    Handles:
+      - {url: "https://..."}
+      - {images: {items: [{sources: [{url, width, height}]}]}}  (modern GraphQL)
+      - {images: [{url, ...}]}                                  (REST style)
+      - {coverArt: {sources: [{url, ...}]}}                     (track cover)
+      - direct list/string fallbacks
+    """
     if not obj:
         return ""
     if isinstance(obj, str):
-        return obj
+        return obj if _is_url(obj) else ""
+    if isinstance(obj, list):
+        for el in obj:
+            got = _sx_img(el)
+            if got:
+                return got
+        return ""
     if isinstance(obj, dict):
-        for k in ("url", "uri"):
-            if isinstance(obj.get(k), str):
-                return obj[k]
-        if isinstance(obj.get("images"), list) and obj["images"]:
-            return _sx_img(obj["images"][0])
-        for k in ("image", "cover", "coverArt", "thumbnail", "img", "picture"):
+        # Direct url
+        if _is_url(obj.get("url")):
+            return obj["url"]
+        # sources[].url shape (most common in GraphQL)
+        srcs = obj.get("sources")
+        if isinstance(srcs, list):
+            for s in srcs:
+                u = (s.get("url") if isinstance(s, dict) else None)
+                if _is_url(u):
+                    return u
+        # images can be either list or {items: []}
+        imgs = obj.get("images") or obj.get("image")
+        if isinstance(imgs, dict):
+            return _sx_img(imgs.get("items") or imgs.get("sources") or imgs)
+        if isinstance(imgs, list):
+            return _sx_img(imgs)
+        # coverArt / avatarImage etc — nested objects with sources
+        for k in ("coverArt", "avatarImage", "headerImage", "thumbnail", "picture", "img"):
             v = obj.get(k)
             if v:
                 got = _sx_img(v)
                 if got:
                     return got
-        if isinstance(obj.get("sources"), list) and obj["sources"]:
-            return _sx_img(obj["sources"][0])
-    if isinstance(obj, list) and obj:
-        return _sx_img(obj[0])
+        # items[] of objects with sources
+        items = obj.get("items")
+        if isinstance(items, list):
+            return _sx_img(items)
     return ""
 
 
-def _sx_artists(obj) -> str:
-    """Join artist names from any plausible field."""
-    arr = obj.get("artists") if isinstance(obj, dict) else None
-    if arr is None and isinstance(obj, dict):
-        arr = (obj.get("artist") if isinstance(obj.get("artist"), list) else None)
+def _sx_artists(t) -> str:
+    """Join artist names from Spotify GraphQL track shape.
+
+    Modern shape:  t.artists.items[].profile.name
+    Older shape:   t.artists[].name
+    """
+    if not isinstance(t, dict):
+        return ""
+    arr_holder = t.get("artists") or t.get("artist")
     out = []
-    if isinstance(arr, list):
-        for a in arr:
+    if isinstance(arr_holder, dict):
+        items = arr_holder.get("items") or []
+        for a in items:
             if isinstance(a, dict):
-                n = a.get("name") or a.get("profile", {}).get("name") if isinstance(a.get("profile"), dict) else a.get("name")
+                n = ((a.get("profile") or {}).get("name") if isinstance(a.get("profile"), dict) else None) or a.get("name")
+                if n:
+                    out.append(n)
+    elif isinstance(arr_holder, list):
+        for a in arr_holder:
+            if isinstance(a, dict):
+                n = ((a.get("profile") or {}).get("name") if isinstance(a.get("profile"), dict) else None) or a.get("name")
                 if n:
                     out.append(n)
             elif isinstance(a, str):
                 out.append(a)
-    elif isinstance(arr, str):
-        out.append(arr)
+    elif isinstance(arr_holder, str):
+        out.append(arr_holder)
     return ", ".join(x for x in out if x)
+
+
+def _sx_duration_ms(t: dict) -> int:
+    """Pick duration in ms from any plausible field."""
+    if not isinstance(t, dict):
+        return 0
+    # Modern GraphQL: trackDuration.totalMilliseconds
+    td = t.get("trackDuration")
+    if isinstance(td, dict):
+        v = td.get("totalMilliseconds") or td.get("milliseconds") or 0
+        if v:
+            return int(v)
+    for k in ("duration_ms", "durationMs", "durationMilliseconds"):
+        v = t.get(k)
+        if v:
+            return int(v)
+    v = t.get("duration")
+    if isinstance(v, (int, float)):
+        return int(v) if v >= 1000 else int(v) * 1000
+    return 0
 
 
 def _sx_track_to_tile(t: dict, idx: int = 0) -> dict:
     if not isinstance(t, dict):
         return None
+    # Common GraphQL wrappers — unwrap to actual track data
+    if isinstance(t.get("itemV2"), dict) and isinstance(t["itemV2"].get("data"), dict):
+        t = t["itemV2"]["data"]
+    if isinstance(t.get("item"), dict) and isinstance(t["item"].get("data"), dict):
+        t = t["item"]["data"]
     if "track" in t and isinstance(t["track"], dict):
         t = t["track"]
+
     name = t.get("name") or t.get("title") or ""
     if not name:
         return None
+
     artists = _sx_artists(t)
-    album = t.get("album") if isinstance(t.get("album"), dict) else {}
+
+    # Album: modern GraphQL uses albumOfTrack; legacy uses album
+    album = t.get("albumOfTrack") if isinstance(t.get("albumOfTrack"), dict) else (
+        t.get("album") if isinstance(t.get("album"), dict) else {}
+    )
     album_name = album.get("name") or album.get("title") or ""
     album_img = _sx_img(album) or _sx_img(t)
-    dur = t.get("duration_ms") or t.get("durationMs") or 0
-    if not dur and t.get("duration"):
-        v = t["duration"]
-        dur = int(v) if isinstance(v, (int, float)) and v >= 1000 else int(v) * 1000
+
+    dur_ms = _sx_duration_ms(t)
+
     tid = t.get("id") or ""
     if not tid:
         uri = t.get("uri") or ""
         tid = uri.split(":")[-1] if uri else ""
+
     return {
         "id": tid,
         "title": name,
         "artist": artists,
         "album": album_name,
         "img": album_img,
-        "duration": int(dur) // 1000 if dur else 0,
+        "duration": dur_ms // 1000 if dur_ms else 0,
         "query": f"{name} {artists}".strip(),
         "source": "Spotify",
     }
@@ -408,12 +480,20 @@ def sx_playlist():
             tile = _sx_track_to_tile(t, i)
             if tile:
                 tracks.append(tile)
+        # Owner: modern GraphQL = ownerV2.data.name; legacy = owner.display_name / owner.name
+        owner_name = ""
+        ov2 = root.get("ownerV2")
+        if isinstance(ov2, dict) and isinstance(ov2.get("data"), dict):
+            owner_name = ov2["data"].get("name") or ""
+        if not owner_name and isinstance(root.get("owner"), dict):
+            owner_name = root["owner"].get("display_name") or root["owner"].get("name") or ""
+
         out = {
             "id": pid,
             "title": root.get("name") or root.get("title") or "",
             "subtitle": (root.get("description") or "") if isinstance(root.get("description"), str) else "",
-            "img": _sx_img(root.get("images") or root.get("image") or root.get("coverArt") or {}),
-            "owner": ((root.get("owner") or {}).get("name") if isinstance(root.get("owner"), dict) else "") or "",
+            "img": _sx_img(root),
+            "owner": owner_name,
             "tracks": tracks,
         }
         _sx_cache[pid] = out
