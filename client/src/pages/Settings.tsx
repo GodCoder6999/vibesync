@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { usePlayer } from '@/stores/playerStore'
+import { usePlayer, setEqBand, getEqBands, EQ_BAND_LABELS } from '@/stores/playerStore'
 import { useLikes } from '@/stores/likesStore'
 import { useRecents } from '@/stores/recentsStore'
 
@@ -48,6 +48,10 @@ export default function Settings() {
             {[0, 5, 10, 15, 30, 45, 60].map((m) => <option key={m} value={m}>{m === 0 ? 'Off' : `${m} min`}</option>)}
           </select>
         </Row>
+      </Section>
+
+      <Section title="Equalizer">
+        <Eq />
       </Section>
 
       <Section title="Library">
@@ -104,6 +108,55 @@ function Toggle({ on, onChange }: { on: boolean; onChange: () => void }) {
     <button onClick={onChange} className={`w-10 h-6 rounded-full p-0.5 transition ${on ? 'bg-[var(--color-accent)]' : 'bg-white/20'}`}>
       <div className={`w-5 h-5 rounded-full bg-white transition ${on ? 'translate-x-4' : ''}`} />
     </button>
+  )
+}
+
+function Eq() {
+  const [bands, setBands] = useState<number[]>(getEqBands())
+  function update(i: number, v: number) {
+    setEqBand(i, v)
+    setBands((b) => b.map((x, idx) => idx === i ? v : x))
+  }
+  function preset(name: string) {
+    const presets: Record<string, number[]> = {
+      Flat:    [0, 0, 0, 0, 0],
+      Bass:    [6, 4, 0, -2, -2],
+      Vocal:   [-2, 0, 4, 3, 0],
+      Treble:  [-2, -1, 0, 3, 6],
+      Lounge:  [-3, 0, 2, -1, -3],
+    }
+    const v = presets[name]
+    if (!v) return
+    v.forEach((db, i) => setEqBand(i, db))
+    setBands(v)
+  }
+  return (
+    <div>
+      <div className="flex gap-2 mb-4">
+        {['Flat','Bass','Vocal','Treble','Lounge'].map((p) => (
+          <button key={p} onClick={() => preset(p)} className="px-3 py-1.5 rounded-full bg-[var(--color-bg-hover)] text-sm">{p}</button>
+        ))}
+      </div>
+      <div className="grid grid-cols-5 gap-3 max-w-md">
+        {EQ_BAND_LABELS.map((label, i) => (
+          <div key={i} className="flex flex-col items-center gap-2">
+            <span className="text-xs text-[var(--color-text-muted)]">+12</span>
+            <input
+              type="range"
+              min={-12}
+              max={12}
+              value={bands[i] ?? 0}
+              onChange={(e) => update(i, Number(e.target.value))}
+              className="accent-[var(--color-accent)]"
+              style={{ writingMode: 'vertical-lr' as any, transform: 'rotate(180deg)', WebkitAppearance: 'slider-vertical' as any, height: 120, width: 24 }}
+            />
+            <span className="text-xs text-[var(--color-text-muted)]">-12</span>
+            <span className="text-xs text-white">{label}</span>
+            <span className="text-xs text-[var(--color-accent)]">{bands[i] ?? 0} dB</span>
+          </div>
+        ))}
+      </div>
+    </div>
   )
 }
 
