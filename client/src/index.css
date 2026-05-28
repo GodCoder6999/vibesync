@@ -14,26 +14,11 @@
   --color-accent-pressed: #169c46;
   --color-danger: #f15e6c;
 
-  --font-sans: 'CircularSp', 'CircularSp-Arab', 'CircularSp-Hebr', 'system-ui', -apple-system, sans-serif;
+  --font-sans: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
 
   --radius-card: 8px;
   --radius-pill: 9999px;
   --shadow-card: 0 8px 24px rgba(0,0,0,0.5);
-}
-
-@font-face {
-  font-family: 'CircularSp';
-  src: url('https://encore.scdn.co/fonts/CircularSp-Book-46e0fd0d4651e0bb38f6c1da43e0f15c.woff2') format('woff2');
-  font-weight: 400;
-  font-style: normal;
-  font-display: swap;
-}
-@font-face {
-  font-family: 'CircularSp';
-  src: url('https://encore.scdn.co/fonts/CircularSp-Bold-fc04d6c7b6c0d8a08442fa48e93d4d49.woff2') format('woff2');
-  font-weight: 700;
-  font-style: normal;
-  font-display: swap;
 }
 
 * { box-sizing: border-box; }
