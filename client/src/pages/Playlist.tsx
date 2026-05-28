@@ -11,9 +11,10 @@ export default function Playlist() {
     enabled: !!id,
   })
 
-  if (isLoading) return <div className="p-6 text-[var(--color-text-muted)]">Loading…</div>
-  if (error)     return <div className="p-6 text-red-400">Failed: {String(error)}</div>
-  if (!data)     return null
+  if (!id) return <div className="p-6 text-red-400">Missing playlist id in URL</div>
+  if (isLoading) return <div className="p-6 text-[var(--color-text-muted)]">Loading playlist {id}…</div>
+  if (error)     return <div className="p-6 text-red-400">Failed: {(error as Error)?.message || String(error)}</div>
+  if (!data)     return <div className="p-6 text-yellow-400">No data returned for {id}</div>
 
   const totalSec = data.tracks.reduce((s, t) => s + (t.duration || 0), 0)
   return (

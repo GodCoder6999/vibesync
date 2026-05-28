@@ -9,34 +9,33 @@ function greeting() {
 }
 
 export default function Home() {
-  const { data, isLoading } = useQuery({ queryKey: ['home'], queryFn: api.home })
+  const { data, isLoading, error } = useQuery({ queryKey: ['home'], queryFn: api.home })
 
-  const playlistIds = (data?.playlists ?? []).slice(0, 6).map((p: any) => p.id)
-  const artistIds   = (data?.artists ?? []).slice(0, 6).map((a: any) => a.id)
+  const rawPlaylists = (data?.playlists ?? []).slice(0, 6)
+  const rawArtists = (data?.artists ?? []).slice(0, 6)
 
-  // Fetch real covers per tile in parallel
   const plQueries = useQueries({
-    queries: playlistIds.map((id) => ({
-      queryKey: ['pl', id],
-      queryFn: () => api.playlist(id),
+    queries: rawPlaylists.map((p: any) => ({
+      queryKey: ['pl', p.id],
+      queryFn: () => api.playlist(p.id),
       staleTime: 60 * 60_000,
     })),
   })
   const arQueries = useQueries({
-    queries: artistIds.map((id) => ({
-      queryKey: ['ar', id],
-      queryFn: () => api.artist(id),
+    queries: rawArtists.map((a: any) => ({
+      queryKey: ['ar', a.id],
+      queryFn: () => api.artist(a.id),
       staleTime: 60 * 60_000,
     })),
   })
 
-  const playlists: Tile[] = (data?.playlists ?? []).map((p: any, i: number) => ({
+  const playlists: Tile[] = rawPlaylists.map((p: any, i: number) => ({
     ...p,
-    img: plQueries[i]?.data?.img || p.img,
+    img: plQueries[i]?.data?.img || p.img || '',
   }))
-  const artists: Tile[] = (data?.artists ?? []).map((a: any, i: number) => ({
+  const artists: Tile[] = rawArtists.map((a: any, i: number) => ({
     ...a,
-    img: arQueries[i]?.data?.img || a.img,
+    img: arQueries[i]?.data?.img || a.img || '',
   }))
 
   return (
@@ -44,6 +43,11 @@ export default function Home() {
       <div className="px-6 pt-2 pb-6">
         <h1 className="text-3xl font-bold text-white">{greeting()}</h1>
       </div>
+      {error && (
+        <div className="mx-6 mb-4 p-3 rounded bg-red-900/50 text-red-200 text-sm">
+          Backend error: {(error as Error)?.message}
+        </div>
+      )}
       {isLoading && <div className="px-6 text-[var(--color-text-muted)]">Loading…</div>}
       <Section title="Featured Playlists" items={playlists} showAllHref="/search" />
       <Section title="Popular Artists" items={artists} circle showAllHref="/search" />

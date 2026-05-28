@@ -3,9 +3,19 @@ import type { ArtistDetail, AlbumDetail, PlaylistDetail, PodcastDetail, SearchRe
 const BASE = (import.meta.env.VITE_API_BASE as string) || 'https://vibesync-4y9t.onrender.com'
 
 async function get<T>(path: string): Promise<T> {
-  const r = await fetch(BASE + path)
-  if (!r.ok) throw new Error(`${path} → ${r.status}`)
-  return r.json()
+  const url = BASE + path
+  // eslint-disable-next-line no-console
+  console.debug('[api] →', url)
+  const r = await fetch(url)
+  if (!r.ok) {
+    const body = await r.text().catch(() => '')
+    throw new Error(`${path} → ${r.status} ${body.slice(0, 120)}`)
+  }
+  const data = (await r.json()) as any
+  if (data && data.error) {
+    throw new Error(`${path} backend error: ${data.error}`)
+  }
+  return data as T
 }
 
 export const api = {
