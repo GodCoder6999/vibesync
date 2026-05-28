@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react'
 import { useParams } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { api } from '@/lib/api'
@@ -5,7 +6,13 @@ import { ActionBar, TrackTable } from './DetailShared'
 import { Section } from '@/components/Section'
 import { HeroSkeleton, TrackRowSkeleton, SectionSkeleton } from '@/components/Skeleton'
 import { useDominantColor } from '@/hooks/useDominantColor'
+import { useAuth } from '@/stores/authStore'
+import { useUi } from '@/stores/uiStore'
+import { followsApi } from '@/lib/follows'
 import type { Tile } from '@/types'
+
+const useAuthState = () => useAuth((s) => s.user)
+const useUiToast = () => useUi((s) => s.toast)
 
 export default function Artist() {
   const { id } = useParams()
@@ -52,12 +59,34 @@ function ArtistHero({ img, name, followers }: { img?: string; name: string; foll
 function RestOfArtist({ data, albums }: { data: any; albums: Tile[] }) {
   return (
     <>
-      <ActionBar tracks={data.top_songs || []} />
+      <div className="px-6 py-4 flex items-center gap-4">
+        <ActionBar tracks={data.top_songs || []} />
+        <FollowArtistButton id={data.id} />
+      </div>
       <section className="px-6 py-4">
         <h2 className="text-2xl font-bold text-white mb-4">Popular</h2>
         <TrackTable tracks={(data.top_songs || []).slice(0, 5)} />
       </section>
       <Section title="Discography" items={albums} />
     </>
+  )
+}
+
+function FollowArtistButton({ id }: { id: string }) {
+  const me = useAuthState()
+  const toast = useUiToast()
+  const [following, setFollowing] = useState(false)
+  useEffect(() => { if (me) followsApi.isFollowing(me.id, 'artist', id).then(setFollowing) }, [me, id])
+  if (!me) return null
+  return (
+    <button
+      onClick={async () => {
+        if (following) { await followsApi.unfollow(me.id, 'artist', id); setFollowing(false); toast('Unfollowed artist') }
+        else           { await followsApi.follow(me.id, 'artist', id);   setFollowing(true);  toast('Following artist') }
+      }}
+      className={`px-4 py-1.5 rounded-full border ${following ? 'border-white/40' : 'border-white'} text-white text-sm font-bold hover:scale-105`}
+    >
+      {following ? 'Following' : 'Follow'}
+    </button>
   )
 }
