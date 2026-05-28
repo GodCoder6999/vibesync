@@ -83,8 +83,8 @@ export default function Home() {
         ))}
       </div>
 
-      <div className="px-6 pt-4 pb-6">
-        <h1 className="text-2xl font-extrabold text-white sr-only">{greeting()}</h1>
+      <div className="px-6 pt-2 pb-4">
+        <h1 className="text-3xl font-extrabold text-white">{greeting()}</h1>
       </div>
 
       {error && <div className="mx-6 mb-4 p-3 rounded bg-red-900/50 text-red-200 text-sm">Backend error: {(error as Error)?.message}</div>}
@@ -101,6 +101,8 @@ export default function Home() {
       ) : (
         <>
           <Section title="It's New Music Friday!" items={playlists} showAllHref="/search" />
+          {liked.length > 0 && <MadeForRow name={user?.display_name || user?.email?.split('@')[0] || 'you'} />}
+          {history.length > 0 && <InspiredByRow tracks={history} />}
           <Section title="Popular Artists" items={artists} circle showAllHref="/search" />
           {history.length > 0 && <RecentlyPlayedRow tracks={history} />}
           {liked.length > 0 && <MadeForYouRow />}
@@ -153,6 +155,64 @@ function RecentlyPlayedRow({ tracks }: { tracks: any[] }) {
             onClick={() => setQueue(tracks, i)}
             className="group relative p-4 rounded-md bg-[var(--color-bg-elevated)] hover:bg-[var(--color-bg-hover)] transition text-left"
           >
+            <div className="mb-3 aspect-square rounded-md bg-[var(--color-bg-pressed)] bg-cover bg-center shadow-xl" style={{ backgroundImage: t.img ? `url("${t.img}")` : undefined }} />
+            <div className="text-white font-bold truncate">{t.title}</div>
+            <div className="text-sm text-[var(--color-text-muted)] truncate">{t.artist}</div>
+          </button>
+        ))}
+      </div>
+    </section>
+  )
+}
+
+function MadeForRow({ name }: { name: string }) {
+  const liked = useLikes((s) => s.tracks)
+  const setQueue = usePlayer((s) => s.setQueue)
+  const shuffleLiked = () => {
+    if (!liked.length) return
+    const sh = [...liked].sort(() => Math.random() - 0.5)
+    setQueue(sh, 0)
+  }
+  return (
+    <section className="px-6 pb-4">
+      <div className="flex items-end justify-between mb-4">
+        <h2 className="text-2xl font-bold text-white">Made For {name}</h2>
+      </div>
+      <div className="grid grid-cols-[repeat(auto-fill,minmax(180px,1fr))] gap-4">
+        <button onClick={shuffleLiked} className="block text-left p-4 rounded-md bg-gradient-to-br from-purple-700 to-pink-700 hover:scale-[1.02] transition">
+          <div className="aspect-square rounded-md bg-cover bg-center grid place-items-end shadow-xl mb-3" style={{ backgroundImage: liked[0]?.img ? `url("${liked[0].img}")` : undefined }}>
+            <div className="text-white text-2xl font-extrabold p-3">Your Mix</div>
+          </div>
+          <div className="text-white font-bold">Liked Songs Mix</div>
+          <div className="text-sm text-white/80">Shuffled from {liked.length} songs you love</div>
+        </button>
+        <a href="/made-for-you" className="block p-4 rounded-md bg-gradient-to-br from-blue-700 to-cyan-600 hover:scale-[1.02] transition">
+          <div className="aspect-square rounded-md grid place-items-center text-white text-2xl font-extrabold shadow-xl mb-3">Daily Mix</div>
+          <div className="text-white font-bold">Daily Mix 1</div>
+          <div className="text-sm text-white/80">Based on your activity</div>
+        </a>
+        <a href="/recent" className="block p-4 rounded-md bg-gradient-to-br from-orange-700 to-red-700 hover:scale-[1.02] transition">
+          <div className="aspect-square rounded-md grid place-items-center text-white text-2xl font-extrabold shadow-xl mb-3">Recents</div>
+          <div className="text-white font-bold">Recently Played</div>
+          <div className="text-sm text-white/80">Pick up where you left off</div>
+        </a>
+      </div>
+    </section>
+  )
+}
+
+function InspiredByRow({ tracks }: { tracks: any[] }) {
+  const setQueue = usePlayer((s) => s.setQueue)
+  const items = tracks.slice(0, 6)
+  return (
+    <section className="px-6 pb-4">
+      <div className="flex items-end justify-between mb-4">
+        <h2 className="text-2xl font-bold text-white">Inspired by your recent activity</h2>
+        <a href="/recent" className="text-sm text-[var(--color-text-muted)] hover:underline font-bold">Show all</a>
+      </div>
+      <div className="grid grid-cols-[repeat(auto-fill,minmax(180px,1fr))] gap-4">
+        {items.map((t: any, i: number) => (
+          <button key={`${t.id}-${i}`} onClick={() => setQueue(tracks, i)} className="group relative p-4 rounded-md bg-[var(--color-bg-elevated)] hover:bg-[var(--color-bg-hover)] transition text-left">
             <div className="mb-3 aspect-square rounded-md bg-[var(--color-bg-pressed)] bg-cover bg-center shadow-xl" style={{ backgroundImage: t.img ? `url("${t.img}")` : undefined }} />
             <div className="text-white font-bold truncate">{t.title}</div>
             <div className="text-sm text-[var(--color-text-muted)] truncate">{t.artist}</div>

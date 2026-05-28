@@ -1,6 +1,11 @@
 import type { ArtistDetail, AlbumDetail, PlaylistDetail, PodcastDetail, SearchResults, Track } from '@/types'
+import { QueryClient } from '@tanstack/react-query'
 
 const BASE = (import.meta.env.VITE_API_BASE as string) || 'https://vibesync-4y9t.onrender.com'
+
+// Module-level handle to the shared QueryClient — main.tsx sets it.
+let _qc: QueryClient | null = null
+export function setApiQueryClient(qc: QueryClient) { _qc = qc }
 
 async function get<T>(path: string): Promise<T> {
   const url = BASE + path
@@ -33,9 +38,19 @@ export const api = {
   search: (q: string, limit = 8) =>
     get<SearchResults>(`/api/sx-search?q=${encodeURIComponent(q)}&limit=${limit}`),
 
-  // Audio matching: query JioSaavn for a track URL
-  matchAudio: (q: string) =>
-    get<{ results: Track[] }>(`/api/search?q=${encodeURIComponent(q)}&limit=1`),
+  // Audio matching: query JioSaavn for a track URL. Routes through the
+  // shared TanStack QueryClient so identical queries hit cache instead
+  // of refetching on every track change / prefetch-on-hover.
+  matchAudio: async (q: string): Promise<{ results: Track[] }> => {
+    if (_qc) {
+      return _qc.fetchQuery({
+        queryKey: ['match-audio', q],
+        queryFn: () => get<{ results: Track[] }>(`/api/search?q=${encodeURIComponent(q)}&limit=1`),
+        staleTime: 60 * 60_000,
+      })
+    }
+    return get(`/api/search?q=${encodeURIComponent(q)}&limit=1`)
+  },
 
   // YouTube Music fallback (if JioSaavn missing a Western track)
   ytSearch: (q: string) =>

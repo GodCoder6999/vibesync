@@ -6,6 +6,7 @@ import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client
 import { createSyncStoragePersister } from '@tanstack/query-sync-storage-persister'
 import './index.css'
 import App from './App'
+import { setApiQueryClient } from './lib/api'
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -24,6 +25,8 @@ const persister = createSyncStoragePersister({
   key: 'vs-query-cache',
   throttleTime: 1000,
 })
+
+setApiQueryClient(queryClient)
 
 // Wake Render dyno + warm caches as soon as app boots.
 const BASE = (import.meta.env.VITE_API_BASE as string) || 'https://vibesync-4y9t.onrender.com'

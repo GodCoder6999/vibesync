@@ -67,6 +67,16 @@ export function TrackTable({ tracks, showAlbum }: { tracks: Track[]; showAlbum?:
     enabled: !!user,
   })
 
+  function prefetchAudio(t: Track) {
+    if (t.url) return
+    const q = t.query || `${t.title} ${t.artist}`.trim()
+    qc.prefetchQuery({
+      queryKey: ['match-audio', q],
+      queryFn: () => fetch(((import.meta.env.VITE_API_BASE as string) || 'https://vibesync-4y9t.onrender.com') + `/api/search?q=${encodeURIComponent(q)}&limit=1`).then((r) => r.json()),
+      staleTime: 60 * 60_000,
+    })
+  }
+
   function onContext(e: React.MouseEvent, t: Track) {
     e.preventDefault()
     const items: any[] = [
@@ -102,6 +112,7 @@ export function TrackTable({ tracks, showAlbum }: { tracks: Track[]; showAlbum?:
           <tr
             key={`${t.id}-${i}`}
             onClick={() => setQueue(tracks, i)}
+            onMouseEnter={() => prefetchAudio(t)}
             onContextMenu={(e) => onContext(e, t)}
             className="hover:bg-white/10 cursor-pointer"
           >
