@@ -169,26 +169,32 @@ function bindCatalogTiles() {
       return;
     }
 
-    // Playlist/album tile → fetch tracks + queue them
+    // Playlist/album tile → navigate to detail page
     const tile = e.target.closest('[data-cat-tile]');
     if (!tile) return;
     e.preventDefault();
     let item;
     try { item = JSON.parse(tile.getAttribute('data-cat-tile')); } catch { return; }
-    try {
-      let tracks = null;
-      if ((item.type === 'playlist' || item.type === 'chart') && item.id) {
+    // Card body → detail page; play FAB → instant play
+    const isFab = e.target.closest('.card-fab, .qp-fab');
+    if (item.id && (item.type === 'playlist' || item.type === 'chart')) {
+      if (isFab) {
         const p = await window.cat.playlist(item.id);
-        tracks = p.tracks || [];
-      } else if (item.type === 'album' && item.id) {
+        if (p.tracks?.length) window.vsSetQueue(p.tracks, 0);
+      } else {
+        location.href = `playlist.html?id=${encodeURIComponent(item.id)}&cover=${encodeURIComponent(item.img || '')}`;
+      }
+      return;
+    }
+    if (item.id && item.type === 'album') {
+      if (isFab) {
         const a = await window.cat.album(item.id);
-        tracks = a.tracks || [];
+        if (a.tracks?.length) window.vsSetQueue(a.tracks, 0);
+      } else {
+        location.href = `album.html?id=${encodeURIComponent(item.id)}&cover=${encodeURIComponent(item.img || '')}`;
       }
-      if (tracks?.length && window.vsSetQueue) {
-        window.vsSetQueue(tracks, 0);
-        return;
-      }
-    } catch (err) { console.warn('tile fetch fail', err); }
+      return;
+    }
     if (item.query && window.searchAndPlay) window.searchAndPlay(item.query);
   });
 }

@@ -166,12 +166,16 @@ document.addEventListener('click', (e) => {
     return;
   }
 
-  // Sidebar item click → Liked Songs → library, others → search
+  // Sidebar item click — route by kind
   const sbItem = e.target.closest('.sb-item');
   if (sbItem) {
     const title = sbItem.querySelector('strong')?.textContent || '';
-    if (title === 'Liked Songs') location.href = 'library.html';
-    else location.href = 'explore.html?q=' + encodeURIComponent(title);
+    if (title === 'Liked Songs') { location.href = 'library.html'; return; }
+    if (sbItem.classList.contains('artist')) {
+      location.href = 'artist.html?name=' + encodeURIComponent(title);
+    } else {
+      location.href = 'explore.html?q=' + encodeURIComponent(title);
+    }
     return;
   }
 
