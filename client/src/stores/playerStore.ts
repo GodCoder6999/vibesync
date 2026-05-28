@@ -131,12 +131,23 @@ export const usePlayer = create<State & Actions>()(
         set({ index: i, current: t, position: 0 })
         let url = t.url
         if (!url) {
-          // No direct URL — try JioSaavn matcher
+          const q = t.query || `${t.title} ${t.artist}`.trim()
+          // 1) JioSaavn match (fast, no cookies needed)
           try {
-            const q = t.query || `${t.title} ${t.artist}`.trim()
             const r = await api.matchAudio(q)
             url = r.results?.[0]?.url
           } catch {}
+          // 2) YouTube Music fallback (Western catalogue)
+          if (!url) {
+            try {
+              const r = await api.ytSearch(q)
+              const vid = r.results?.[0]?.video_id
+              if (vid) {
+                const s = await api.ytStream(vid)
+                url = s.url
+              }
+            } catch {}
+          }
         }
         const a = get().audio
         if (!a || !url) return

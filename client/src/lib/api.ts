@@ -37,6 +37,12 @@ export const api = {
   matchAudio: (q: string) =>
     get<{ results: Track[] }>(`/api/search?q=${encodeURIComponent(q)}&limit=1`),
 
+  // YouTube Music fallback (if JioSaavn missing a Western track)
+  ytSearch: (q: string) =>
+    get<{ results: any[] }>(`/api/yt-search?q=${encodeURIComponent(q)}&limit=3`).catch(() => ({ results: [] as any[] })),
+  ytStream: (id: string) =>
+    get<{ url: string }>(`/api/yt-stream?id=${encodeURIComponent(id)}`).catch(() => ({ url: '' })),
+
   // Lyrics
   lyrics: (title: string, artist: string) =>
     get<{ plain: string; synced: string; source: string }>(

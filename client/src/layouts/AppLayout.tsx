@@ -11,6 +11,7 @@ import { usePlayer } from '@/stores/playerStore'
 import { useAuth } from '@/stores/authStore'
 import { useShortcuts } from '@/hooks/useShortcuts'
 import { useSyncLikes } from '@/hooks/useSyncLikes'
+import { useHistory } from '@/hooks/useHistory'
 
 export default function AppLayout() {
   const init = usePlayer((s) => s.init)
@@ -18,6 +19,7 @@ export default function AppLayout() {
   useEffect(() => { init(); initAuth() }, [init, initAuth])
   useShortcuts()
   useSyncLikes()
+  useHistory()
 
   return (
     <div className="flex h-screen flex-col">

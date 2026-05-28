@@ -176,6 +176,85 @@ def search():
         return jsonify(error=str(e), results=[]), 500
 
 
+# ---------- YouTube Music fallback audio ----------
+# Uses ytmusicapi for search and yt-dlp for direct audio URL extraction.
+# Render's outbound IP may hit YouTube's "Sign in to confirm" bot wall;
+# the catch-all handler logs the failure and returns {error: ...} so the
+# frontend can fall back to JioSaavn.
+
+_yt_cache: dict = {}
+
+
+@app.route("/api/yt-search")
+def yt_search():
+    q = (request.args.get("q") or "").strip()
+    if not q:
+        return jsonify(error="missing q", results=[]), 400
+    if q in _yt_cache:
+        return jsonify(_yt_cache[q])
+    try:
+        from ytmusicapi import YTMusic
+        ym = YTMusic()
+        items = ym.search(q, filter="songs", limit=int(request.args.get("limit", 5)))
+        out = []
+        for it in items[:5]:
+            vid = it.get("videoId")
+            if not vid:
+                continue
+            arts = it.get("artists") or []
+            out.append({
+                "id": vid,
+                "title": it.get("title") or "",
+                "artist": ", ".join(a.get("name", "") for a in arts[:3]),
+                "album": (it.get("album") or {}).get("name", ""),
+                "img": ((it.get("thumbnails") or [{}])[-1].get("url", "")) or "",
+                "duration": _parse_dur(it.get("duration") or it.get("duration_seconds")),
+                "video_id": vid,
+                "source": "YouTube Music",
+            })
+        payload = {"results": out}
+        _yt_cache[q] = payload
+        return jsonify(payload)
+    except Exception as e:
+        return jsonify(error=str(e), results=[]), 500
+
+
+def _parse_dur(v) -> int:
+    if isinstance(v, (int, float)):
+        return int(v)
+    if isinstance(v, str) and ":" in v:
+        parts = [int(x) for x in v.split(":")]
+        return parts[0] * 60 + parts[1] if len(parts) == 2 else parts[0] * 3600 + parts[1] * 60 + parts[2]
+    return 0
+
+
+@app.route("/api/yt-stream")
+def yt_stream():
+    vid = (request.args.get("id") or "").strip()
+    if not vid:
+        return jsonify(error="missing id"), 400
+    key = f"stream:{vid}"
+    if key in _yt_cache:
+        return jsonify(_yt_cache[key])
+    try:
+        import yt_dlp
+        opts = {
+            "format": "bestaudio[ext=m4a]/bestaudio",
+            "quiet": True,
+            "no_warnings": True,
+            "skip_download": True,
+            "cookiefile": os.environ.get("YT_COOKIES_PATH") or None,
+        }
+        with yt_dlp.YoutubeDL(opts) as y:
+            info = y.extract_info(f"https://music.youtube.com/watch?v={vid}", download=False)
+        url = info.get("url") or ""
+        payload = {"url": url, "expires": info.get("expires", 0)}
+        _yt_cache[key] = payload
+        return jsonify(payload)
+    except Exception as e:
+        return jsonify(error=str(e)), 500
+
+
 @app.route("/api/home")
 def home():
     lang = request.args.get("lang", "hindi,english")

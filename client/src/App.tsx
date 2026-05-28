@@ -14,6 +14,8 @@ import Settings from './pages/Settings'
 import Welcome from './pages/Welcome'
 import Login from './pages/Login'
 import UserPlaylist from './pages/UserPlaylist'
+import Made from './pages/Made'
+import Recent from './pages/Recent'
 
 export default function App() {
   return (
@@ -27,6 +29,8 @@ export default function App() {
         <Route path="/library" element={<Library />} />
         <Route path="/playlist/:id" element={<Playlist />} />
         <Route path="/me/playlist/:id" element={<UserPlaylist />} />
+        <Route path="/made-for-you" element={<Made />} />
+        <Route path="/recent" element={<Recent />} />
         <Route path="/album/:id" element={<Album />} />
         <Route path="/artist/:id" element={<Artist />} />
         <Route path="/podcast/:id" element={<Podcast />} />
