@@ -2,9 +2,18 @@ flask>=3.0
 pycryptodome>=3.20
 gunicorn>=21.0
 spotapi
+# SpotAPI declared deps (from upstream requirements.txt)
+colorama
+Pillow
+readerwriterlock
 requests
-curl_cffi
-pymongo
+tls_client
+typing_extensions
+validators
+websockets
 pyotp
-tls-client
+beautifulsoup4
+# Transitive runtime deps SpotAPI imports lazily
+pymongo
 redis
+curl_cffi
