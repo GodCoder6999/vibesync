@@ -33,9 +33,32 @@ import urllib.parse
 import urllib.request
 
 from flask import Flask, jsonify, request, send_from_directory
+from flask_cors import CORS
 from Crypto.Cipher import DES
 
 app = Flask(__name__, static_folder=".", static_url_path="")
+# Permissive CORS for every /api/* route. Replaces the prior hand-rolled
+# @after_request header injection, which didn't fire for 5xx responses
+# raised by SpotAPI inside @app.errorhandler.
+CORS(
+    app,
+    resources={r"/api/*": {"origins": "*"}},
+    methods=["GET", "OPTIONS"],
+    expose_headers=["Content-Type"],
+    send_wildcard=True,
+)
+
+
+@app.errorhandler(Exception)
+def _err(e):
+    """Catch unhandled exceptions, return JSON with CORS headers so the
+    frontend can show a meaningful error instead of net::ERR_FAILED."""
+    import traceback
+    traceback.print_exc()
+    resp = jsonify(error=str(e), ok=False)
+    resp.status_code = 500
+    resp.headers["Access-Control-Allow-Origin"] = "*"
+    return resp
 
 # ---------- Shared helpers ----------
 DES_KEY = b"38346591"
@@ -113,10 +136,10 @@ def format_track(s: dict) -> dict:
 
 # ---------- CORS ----------
 @app.after_request
-def cors(resp):
-    resp.headers["Access-Control-Allow-Origin"] = "*"
-    resp.headers["Access-Control-Allow-Methods"] = "GET, OPTIONS"
-    resp.headers["Cache-Control"] = "public, s-maxage=180"
+def _cache_header(resp):
+    # Cache hint only — CORS handled by flask-cors above.
+    if request.path.startswith("/api/"):
+        resp.headers.setdefault("Cache-Control", "public, s-maxage=180")
     return resp
 
 
@@ -267,6 +290,19 @@ def lyrics():
 # SpotAPI scrapes Spotify's public web endpoints; may rate-limit on cloud IPs.
 
 _sx_cache = {}  # id -> normalized dict (cuts duplicate scrapes)
+
+# Limit concurrent SpotAPI scrapes — Spotify rate-limits hard if you fire
+# many in parallel from one IP. The frontend's home page fans out 6+
+# requests at once; without this they pile up and Spotify starts
+# returning empty/error payloads (surfaced as 500s).
+import threading as _threading
+_sx_sem = _threading.Semaphore(2)
+
+
+def _sx_call(fn, *args, **kwargs):
+    """Wrap a SpotAPI invocation behind the global semaphore."""
+    with _sx_sem:
+        return fn(*args, **kwargs)
 
 
 def _is_url(s) -> bool:
@@ -474,7 +510,7 @@ def sx_search():
     try:
         sa = _spotapi()
         song = sa.Song()
-        data = song.query_songs(q, limit=limit)
+        data = _sx_call(song.query_songs, q, limit=limit)
         sv2 = ((data.get("data") or {}).get("searchV2")) if isinstance(data, dict) else {}
         sv2 = sv2 or {}
 
@@ -580,7 +616,7 @@ def sx_podcast():
     try:
         sa = _spotapi()
         pod = sa.Podcast(pid)
-        info = pod.get_podcast_info(limit=50)
+        info = _sx_call(pod.get_podcast_info, limit=50)
         root = ((info.get("data") or {}).get("podcastUnionV2")) or ((info.get("data") or {}).get("podcastUnion")) or info or {}
         ev2 = root.get("episodesV2") or root.get("episodes") or {}
         items_raw = ev2.get("items") if isinstance(ev2, dict) else (ev2 or [])
@@ -654,7 +690,7 @@ def sx_playlist():
     try:
         sa = _spotapi()
         pl = sa.PublicPlaylist(pid)
-        info = pl.get_playlist_info(limit=100)
+        info = _sx_call(pl.get_playlist_info, limit=100)
         # SpotAPI returns nested GraphQL shape
         root = info.get("data", {}).get("playlistV2") if isinstance(info, dict) else None
         if not root:
@@ -700,7 +736,7 @@ def sx_album():
     try:
         sa = _spotapi()
         alb = sa.PublicAlbum(aid)
-        info = alb.get_album_info()
+        info = _sx_call(alb.get_album_info)
         root = info.get("data", {}).get("albumUnion") if isinstance(info, dict) else None
         if not root:
             root = info if isinstance(info, dict) else {}
@@ -752,7 +788,7 @@ def sx_artist():
             if not aid:
                 return jsonify(error="not found"), 404
         ar = sa.PublicArtist(aid)
-        info = ar.get_artist_info()
+        info = _sx_call(ar.get_artist_info)
         root = info.get("data", {}).get("artistUnion") if isinstance(info, dict) else None
         if not root:
             root = info if isinstance(info, dict) else {}
@@ -840,7 +876,7 @@ def _prewarm_curated():
                 continue
             try:
                 pl = sa.PublicPlaylist(pid)
-                info = pl.get_playlist_info(limit=100)
+                info = _sx_call(pl.get_playlist_info, limit=100)
                 root = (info.get("data") or {}).get("playlistV2") or info or {}
                 items_raw = ((root.get("content") or {}).get("items")) or []
                 tracks = []
@@ -870,7 +906,7 @@ def _prewarm_curated():
                 continue
             try:
                 ar = sa.PublicArtist(aid)
-                info = ar.get_artist_info()
+                info = _sx_call(ar.get_artist_info)
                 root = (info.get("data") or {}).get("artistUnion") or info or {}
                 profile = root.get("profile") or {}
                 visuals = root.get("visuals") or {}

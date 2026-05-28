@@ -1,4 +1,5 @@
 flask>=3.0
+flask-cors>=4.0
 pycryptodome>=3.20
 gunicorn>=21.0
 spotapi
