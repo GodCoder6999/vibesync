@@ -15,15 +15,22 @@ async function renderDetail(type) {
   const id = params.get('id');
   const name = params.get('name');
   const cover = params.get('cover') || '';
+  const src = params.get('src'); // 'rx' = Spotify via RapidAPI, else JioSaavn
 
   const content = document.getElementById('content');
   content.innerHTML = `<div style="padding:80px 24px;color:var(--text-muted)">Loading…</div>`;
 
   try {
     let data;
-    if (type === 'playlist') data = await window.cat.playlist(id);
-    else if (type === 'album') data = await window.cat.album(id);
-    else if (type === 'artist') data = await window.cat.artist(id ? { id } : { name });
+    if (src === 'rx') {
+      if (type === 'playlist') data = await window.cat.rxPlaylist(id);
+      else if (type === 'album') data = await window.cat.rxAlbum(id);
+      else if (type === 'artist') data = await window.cat.rxArtist(id);
+    } else {
+      if (type === 'playlist') data = await window.cat.playlist(id);
+      else if (type === 'album') data = await window.cat.album(id);
+      else if (type === 'artist') data = await window.cat.artist(id ? { id } : { name });
+    }
     if (!data || data.error) throw new Error(data?.error || 'No data');
 
     if (type === 'artist') renderArtist(content, data);
@@ -138,7 +145,7 @@ async function renderArtist(content, data) {
       <div class="section-head"><h2>Discography</h2><a href="#">Show all</a></div>
       <div class="card-row">
         ${albums.map(a => `
-          <a class="card" href="album.html?id=${encodeURIComponent(a.id)}">
+          <a class="card" href="album.html?id=${encodeURIComponent(a.id)}${a.type === 'rx-album' ? '&src=rx' : ''}">
             <div class="card-cover" ${a.img ? `style="background-image:url(&quot;${a.img}&quot;)"` : ''}></div>
             <h3>${esc(a.title)}</h3>
             <p>${esc(a.subtitle || 'Album')}</p>

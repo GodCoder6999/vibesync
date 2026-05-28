@@ -22,44 +22,39 @@ async function doRender() {
   const ua = document.getElementById('userAvatar');
   if (ua) ua.textContent = (user.name || 'U')[0].toUpperCase();
 
-  // Language for JioSaavn home
-  const langMap = { Hindi: 'hindi', English: 'english', Punjabi: 'punjabi', Tamil: 'tamil',
-    Telugu: 'telugu', Bengali: 'bengali', Marathi: 'marathi', Gujarati: 'gujarati',
-    Kannada: 'kannada', Malayalam: 'malayalam', Bhojpuri: 'bhojpuri' };
-  const langs = (full?.languages || []).map(l => langMap[l]).filter(Boolean);
-  const lang = langs.length ? langs.join(',') : 'hindi,english';
+  // ---- Spotify curated home (real Spotify metadata via RapidAPI) ----
+  const rx = await window.cat.rxHome().catch(e => { console.warn('rx home fail', e); return {}; });
+  const playlists = rx.playlists || [];
+  const artists = rx.artists || [];
 
-  const home = await window.cat.home(lang).catch(e => { console.warn('home fail', e); return {}; });
-
-  // ---- Quick-pick tiles (top 6) ----
-  const quick = [
-    ...(home.charts || []).slice(0, 3),
-    ...(home.playlists || []).slice(0, 3),
-  ].filter(Boolean).slice(0, 6);
+  // Quick picks — top 6 playlists
+  const quick = playlists.slice(0, 6);
   document.getElementById('quickPicks').innerHTML = quick.map(t => `
     <button class="qp-tile" data-cat-tile='${escAttr(JSON.stringify(t))}'>
-      <div class="qp-cover" ${t.img ? `style="background-image:url(&quot;${t.img}&quot;)"` : ''}></div>
+      <div class="qp-cover" data-rx-cover='${escAttr(JSON.stringify({type:'playlist', id:t.id}))}' ${t.img ? `style="background-image:url(&quot;${t.img}&quot;)"` : ''}></div>
       <strong>${esc(t.title)}</strong>
       <div class="qp-fab"><svg width="20" height="20" viewBox="0 0 16 16" fill="currentColor"><path d="M3 1.713a.7.7 0 0 1 1.05-.607l10.89 6.288a.7.7 0 0 1 0 1.212L4.05 14.894A.7.7 0 0 1 3 14.288V1.713z"/></svg></div>
     </button>`).join('');
 
-  // ---- Sections ----
+  // Sections: Featured Playlists + Popular Artists
   const container = document.getElementById('dynSections');
   const sections = [];
-  if (home.charts?.length)      sections.push({ title: 'Made For You',        items: home.charts });
-  if (home.new_albums?.length)  sections.push({ title: 'New Releases',        items: home.new_albums });
-  if (home.playlists?.length)   sections.push({ title: 'Popular Playlists',   items: home.playlists });
+  if (playlists.length) sections.push({ title: 'Featured Playlists', items: playlists, kind: 'playlist' });
+  if (artists.length)   sections.push({ title: 'Popular Artists',    items: artists,   kind: 'artist'   });
 
-  container.innerHTML = sections.map(sec => sectionHTML(sec.title, sec.items.slice(0, 8))).join('');
+  container.innerHTML = sections.map(sec => sectionHTML(sec.title, sec.items.slice(0, 8), sec.kind)).join('');
 
-  // ---- User-pref rows ----
-  const artists = full?.artists || [];
-  const genres = full?.genres || prefs.filter(p => !artists.includes(p));
-  const ordered = [...artists, ...genres].slice(0, 5);
+  // Lazy-load covers from RapidAPI (one request per tile, cached)
+  loadRxCovers();
+
+  // ---- User-pref mix rows (JioSaavn fallback for taste-based recs) ----
+  const userArtists = full?.artists || [];
+  const genres = full?.genres || prefs.filter(p => !userArtists.includes(p));
+  const ordered = [...userArtists, ...genres].slice(0, 4);
   if (ordered.length) {
     container.innerHTML += ordered.map(p => `
       <section class="section" data-pref="${escAttr(p)}">
-        <div class="section-head"><h2>${esc(p)} Mix</h2><a href="#">Show all</a></div>
+        <div class="section-head"><h2>${esc(p)} Mix</h2><a href="explore.html">Show all</a></div>
         <div class="card-row skel">${cardSkel().repeat(6)}</div>
       </section>`).join('');
 
@@ -67,13 +62,11 @@ async function doRender() {
       const data = await window.cat.search(p, 12);
       const sec = container.querySelector(`[data-pref="${cssEsc(p)}"] .card-row`);
       if (!sec) return;
-      // Filter karaoke / instrumental clutter
       const cleaned = (data.results || []).filter(t => {
         const s = (t.title || '').toLowerCase();
         return !s.includes('karaoke') && !s.includes('instrumental') && !s.includes('tribute');
       }).slice(0, 8);
       sec.outerHTML = trackCardRow(cleaned);
-      // Swap covers + artist info to iTunes (clean, watermark-free Apple Music art)
       cleaned.forEach(t => swapToCleanCover(p, t));
     }));
   }
@@ -82,14 +75,34 @@ async function doRender() {
   bindLogout();
 }
 
-function sectionHTML(title, items) {
+// Lazy-fetch RapidAPI covers for tiles that don't have an image yet.
+async function loadRxCovers() {
+  const tiles = document.querySelectorAll('[data-rx-cover]');
+  for (const el of tiles) {
+    try {
+      const ref = JSON.parse(el.getAttribute('data-rx-cover'));
+      if (!ref.id) continue;
+      let d;
+      if (ref.type === 'playlist') d = await window.cat.rxPlaylist(ref.id);
+      else if (ref.type === 'artist')   d = await window.cat.rxArtist(ref.id);
+      else if (ref.type === 'album')    d = await window.cat.rxAlbum(ref.id);
+      const img = d?.img;
+      if (img) el.style.backgroundImage = `url("${img}")`;
+    } catch (e) { /* quota or 404, skip */ }
+    await new Promise(r => setTimeout(r, 60));
+  }
+}
+
+function sectionHTML(title, items, kind) {
   if (!items.length) return '';
+  // kind = 'playlist' | 'artist' | 'album' — sets RapidAPI cover hint type
+  const rxType = kind === 'artist' ? 'artist' : (kind === 'album' ? 'album' : 'playlist');
   return `<section class="section">
-    <div class="section-head"><h2>${esc(title)}</h2><a href="#">Show all</a></div>
+    <div class="section-head"><h2>${esc(title)}</h2><a href="explore.html">Show all</a></div>
     <div class="card-row">
       ${items.map(it => `
-        <button class="card" data-cat-tile='${escAttr(JSON.stringify(it))}'>
-          <div class="card-cover" ${it.img ? `style="background-image:url(&quot;${it.img}&quot;)"` : ''}></div>
+        <button class="card${kind === 'artist' ? ' artist' : ''}" data-cat-tile='${escAttr(JSON.stringify(it))}'>
+          <div class="card-cover" data-rx-cover='${escAttr(JSON.stringify({type: rxType, id: it.id}))}' ${it.img ? `style="background-image:url(&quot;${it.img}&quot;)"` : ''}></div>
           <h3>${esc(it.title)}</h3>
           <p>${esc(it.subtitle || '')}</p>
           <div class="card-fab"><svg viewBox="0 0 16 16" fill="currentColor"><path d="M3 1.713a.7.7 0 0 1 1.05-.607l10.89 6.288a.7.7 0 0 1 0 1.212L4.05 14.894A.7.7 0 0 1 3 14.288V1.713z"/></svg></div>
@@ -169,14 +182,44 @@ function bindCatalogTiles() {
       return;
     }
 
-    // Playlist/album tile → navigate to detail page
+    // Playlist/album/artist tile → navigate to detail page
     const tile = e.target.closest('[data-cat-tile]');
     if (!tile) return;
     e.preventDefault();
     let item;
     try { item = JSON.parse(tile.getAttribute('data-cat-tile')); } catch { return; }
-    // Card body → detail page; play FAB → instant play
     const isFab = e.target.closest('.card-fab, .qp-fab');
+
+    // Spotify-curated tiles (RapidAPI)
+    if (item.id && item.type === 'rx-playlist') {
+      if (isFab) {
+        const p = await window.cat.rxPlaylist(item.id);
+        if (p.tracks?.length) window.vsSetQueue(p.tracks, 0);
+      } else {
+        location.href = `playlist.html?id=${encodeURIComponent(item.id)}&src=rx`;
+      }
+      return;
+    }
+    if (item.id && item.type === 'rx-artist') {
+      if (isFab) {
+        const a = await window.cat.rxArtist(item.id);
+        if (a.top_songs?.length) window.vsSetQueue(a.top_songs, 0);
+      } else {
+        location.href = `artist.html?id=${encodeURIComponent(item.id)}&src=rx`;
+      }
+      return;
+    }
+    if (item.id && item.type === 'rx-album') {
+      if (isFab) {
+        const a = await window.cat.rxAlbum(item.id);
+        if (a.tracks?.length) window.vsSetQueue(a.tracks, 0);
+      } else {
+        location.href = `album.html?id=${encodeURIComponent(item.id)}&src=rx`;
+      }
+      return;
+    }
+
+    // JioSaavn fallback tiles
     if (item.id && (item.type === 'playlist' || item.type === 'chart')) {
       if (isFab) {
         const p = await window.cat.playlist(item.id);

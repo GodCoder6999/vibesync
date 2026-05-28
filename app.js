@@ -242,16 +242,29 @@ document.addEventListener('mousedown', (e) => {
 });
 
 // ---------- Queue helpers ----------
+// Tracks may come from Spotify catalog (no url) — audio is lazy-matched via
+// JioSaavn search on play. The track keeps its Spotify cover/metadata.
 window.vsSetQueue = function(tracks, startIdx = 0) {
-  state.queue = tracks.filter(t => t && t.url);
+  state.queue = (tracks || []).filter(Boolean);
   state.queueIdx = startIdx;
   if (state.queue[startIdx]) playQueueIdx(startIdx);
 };
 
-function playQueueIdx(i) {
-  const t = state.queue[i];
+async function playQueueIdx(i) {
+  let t = state.queue[i];
   if (!t || !window.vsAudio) return;
   state.queueIdx = i;
+  if (!t.url && window.matchAudio) {
+    if (window.updateNowPlaying) window.updateNowPlaying(t, { loading: true });
+    const matched = await window.matchAudio(t);
+    if (matched && matched.url) {
+      t = { ...t, url: matched.url };
+      state.queue[i] = t;
+    } else {
+      if (window.vsToast) window.vsToast('No audio match for ' + (t.title || ''));
+      return;
+    }
+  }
   window.vsAudio.src = t.url;
   window.vsAudio.play();
   if (window.updateNowPlaying) window.updateNowPlaying(t);
