@@ -12,6 +12,7 @@ import { useAuth } from '@/stores/authStore'
 import { useShortcuts } from '@/hooks/useShortcuts'
 import { useSyncLikes } from '@/hooks/useSyncLikes'
 import { useHistory } from '@/hooks/useHistory'
+import { useUi } from '@/stores/uiStore'
 
 export default function AppLayout() {
   const init = usePlayer((s) => s.init)
@@ -20,6 +21,18 @@ export default function AppLayout() {
   useShortcuts()
   useSyncLikes()
   useHistory()
+
+  // Auto-open right sidebar on first track play (Spotify default)
+  useEffect(() => {
+    let opened = false
+    return usePlayer.subscribe((s) => {
+      if (!opened && s.current) {
+        opened = true
+        const ui = useUi.getState()
+        if (!ui.rightOpen) ui.toggleRight('now')
+      }
+    })
+  }, [])
 
   return (
     <div className="flex h-screen flex-col">

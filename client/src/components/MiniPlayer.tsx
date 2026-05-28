@@ -83,8 +83,11 @@ export default function MiniPlayer() {
         </div>
       </div>
 
-      <div className="flex items-center justify-end gap-3">
+      <div className="flex items-center justify-end gap-2">
         <RightToggle />
+        <button title="Connect to device" className="text-[var(--color-text-muted)] hover:text-white">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M6 2.75A.75.75 0 0 1 6.75 2h7.5a.75.75 0 0 1 .75.75v8.5a.75.75 0 0 1-.75.75h-3.5v-1.5h2.75v-7h-6v1.5H6v-2.25z"/><path d="M1 6.75A.75.75 0 0 1 1.75 6h7.5a.75.75 0 0 1 .75.75v6.5a.75.75 0 0 1-.75.75h-7.5a.75.75 0 0 1-.75-.75v-6.5z"/></svg>
+        </button>
         <button onClick={toggleMute} className="text-[var(--color-text-muted)] hover:text-white">
           <Icon name="volume" className="w-5 h-5" filled />
         </button>
@@ -95,8 +98,11 @@ export default function MiniPlayer() {
           step={0.01}
           value={muted ? 0 : volume}
           onChange={(e) => setVolume(Number(e.target.value))}
-          className="w-24 accent-white h-1"
+          className="w-20 accent-white h-1"
         />
+        <button onClick={() => useUi.getState().toggleFullscreen()} title="Fullscreen" className="text-[var(--color-text-muted)] hover:text-white">
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M0 5.5A1.5 1.5 0 0 1 1.5 4h13A1.5 1.5 0 0 1 16 5.5v6a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 0 11.5v-6zm14.5-.5h-13v6h13v-6z"/></svg>
+        </button>
       </div>
     </footer>
   )
