@@ -40,10 +40,16 @@ export default function SearchBar() {
     staleTime: 5 * 60_000,
   })
 
-  // Cmd/Ctrl+K to focus
+  // Cmd/Ctrl+K and "/" shortcuts to focus
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
+        e.preventDefault()
+        inputRef.current?.focus()
+        return
+      }
+      // Bare "/" only when not typing in an input/textarea
+      if (e.key === '/' && !(e.target as HTMLElement)?.matches('input, textarea, [contenteditable]')) {
         e.preventDefault()
         inputRef.current?.focus()
       }
@@ -142,6 +148,10 @@ export default function SearchBar() {
             <kbd className="px-1 rounded border border-white/20">K</kbd>
           </span>
         )}
+        <span className="w-px h-5 bg-white/15 mx-1" />
+        <button onClick={() => nav('/search')} title="Browse" className="text-[var(--color-text-muted)] hover:text-white">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M3 3h18v18H3V3zm2 2v6h6V5H5zm8 0v6h6V5h-6zM5 13v6h6v-6H5zm8 0v6h6v-6h-6z"/></svg>
+        </button>
       </div>
 
       {open && (

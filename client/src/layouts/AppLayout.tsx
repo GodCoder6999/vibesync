@@ -14,9 +14,9 @@ export default function AppLayout() {
     <div className="flex h-screen flex-col">
       <div className="flex flex-1 gap-2 p-2 overflow-hidden">
         <Sidebar />
-        <main className="flex-1 flex flex-col rounded-lg bg-[var(--color-bg-panel)] overflow-hidden">
+        <main className="flex-1 flex flex-col rounded-lg bg-[var(--color-bg-panel)] overflow-hidden relative">
           <Topbar />
-          <div className="flex-1 overflow-y-auto">
+          <div className="main-scroll flex-1 overflow-y-auto relative">
             <Outlet />
           </div>
         </main>
