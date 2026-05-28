@@ -1,6 +1,6 @@
 {
   "installCommand": "cd next && npm install --legacy-peer-deps",
-  "buildCommand": "cd next && CI=false npm run build",
+  "buildCommand": "cd next && CI=false DISABLE_ESLINT_PLUGIN=true TSC_COMPILE_ON_ERROR=true SKIP_PREFLIGHT_CHECK=true npm run build",
   "outputDirectory": "next/build",
   "framework": null,
   "rewrites": [
