@@ -1,6 +1,23 @@
 import { usePlayer } from '@/stores/playerStore'
 import { useLikes } from '@/stores/likesStore'
+import { useUi } from '@/stores/uiStore'
 import { Icon } from './Icon'
+
+function RightToggle() {
+  const { toggleRight, rightOpen, rightTab } = useUi()
+  const cls = (active: boolean) =>
+    active ? 'text-[var(--color-accent)]' : 'text-[var(--color-text-muted)] hover:text-white'
+  return (
+    <>
+      <button onClick={() => toggleRight('lyrics')} className={cls(rightOpen && rightTab === 'lyrics')} title="Lyrics">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M13.426 2.574a2.831 2.831 0 0 0-4.797 1.55l3.247 3.247a2.831 2.831 0 0 0 1.55-4.797zM10.5 8.118l-2.619-2.62A63303.13 63303.13 0 0 0 4.74 9.075L2.065 12.12a1.287 1.287 0 0 0 1.816 1.816l3.06-2.688 3.56-3.129zM7.12 4.094a4.331 4.331 0 1 1 4.786 4.786l-3.974 3.493-3.06 2.689a2.787 2.787 0 0 1-3.933-3.933l2.676-3.045 3.505-3.99z"/></svg>
+      </button>
+      <button onClick={() => toggleRight('queue')} className={cls(rightOpen && rightTab === 'queue')} title="Queue">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M15 15H1v-1.5h14V15zm0-4.5H1V9h14v1.5zm-14-7A2.5 2.5 0 0 1 3.5 1h9a2.5 2.5 0 0 1 0 5h-9A2.5 2.5 0 0 1 1 3.5z"/></svg>
+      </button>
+    </>
+  )
+}
 
 function fmt(s: number) {
   if (!isFinite(s) || s < 0) return '0:00'
@@ -67,6 +84,7 @@ export default function MiniPlayer() {
       </div>
 
       <div className="flex items-center justify-end gap-3">
+        <RightToggle />
         <button onClick={toggleMute} className="text-[var(--color-text-muted)] hover:text-white">
           <Icon name="volume" className="w-5 h-5" filled />
         </button>

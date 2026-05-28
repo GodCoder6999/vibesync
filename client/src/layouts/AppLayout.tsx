@@ -3,6 +3,7 @@ import { Outlet } from 'react-router-dom'
 import Sidebar from '@/components/Sidebar'
 import Topbar from '@/components/Topbar'
 import MiniPlayer from '@/components/MiniPlayer'
+import RightSidebar from '@/components/RightSidebar'
 import { usePlayer } from '@/stores/playerStore'
 
 export default function AppLayout() {
@@ -19,6 +20,7 @@ export default function AppLayout() {
             <Outlet />
           </div>
         </main>
+        <RightSidebar />
       </div>
       <MiniPlayer />
     </div>
