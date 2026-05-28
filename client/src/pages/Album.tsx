@@ -2,6 +2,7 @@ import { useParams } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { api } from '@/lib/api'
 import { HeroHeader, ActionBar, TrackTable } from './DetailShared'
+import { HeroSkeleton, TrackRowSkeleton } from '@/components/Skeleton'
 
 export default function Album() {
   const { id } = useParams()
@@ -12,7 +13,7 @@ export default function Album() {
   })
 
   if (!id) return <div className="p-6 text-red-400">Missing album id</div>
-  if (isLoading) return <div className="p-6 text-[var(--color-text-muted)]">Loading album {id}…</div>
+  if (isLoading) return <div><HeroSkeleton /><TrackRowSkeleton count={8} /></div>
   if (error)     return <div className="p-6 text-red-400">Failed: {(error as Error)?.message || String(error)}</div>
   if (!data)     return <div className="p-6 text-yellow-400">No data for {id}</div>
 

@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query'
 import { api } from '@/lib/api'
 import { ActionBar, TrackTable } from './DetailShared'
 import { Section } from '@/components/Section'
+import { HeroSkeleton, TrackRowSkeleton, SectionSkeleton } from '@/components/Skeleton'
 import type { Tile } from '@/types'
 
 export default function Artist() {
@@ -14,7 +15,7 @@ export default function Artist() {
   })
 
   if (!id) return <div className="p-6 text-red-400">Missing artist id</div>
-  if (isLoading) return <div className="p-6 text-[var(--color-text-muted)]">Loading artist {id}…</div>
+  if (isLoading) return <div><HeroSkeleton /><TrackRowSkeleton count={5} /><SectionSkeleton title="Discography" /></div>
   if (error)     return <div className="p-6 text-red-400">Failed: {(error as Error)?.message || String(error)}</div>
   if (!data)     return <div className="p-6 text-yellow-400">No data for {id}</div>
 

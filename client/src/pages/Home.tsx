@@ -1,6 +1,7 @@
 import { useQuery, useQueries } from '@tanstack/react-query'
 import { api } from '@/lib/api'
 import { Section } from '@/components/Section'
+import { SectionSkeleton } from '@/components/Skeleton'
 import type { Tile } from '@/types'
 
 function greeting() {
@@ -48,9 +49,17 @@ export default function Home() {
           Backend error: {(error as Error)?.message}
         </div>
       )}
-      {isLoading && <div className="px-6 text-[var(--color-text-muted)]">Loading…</div>}
-      <Section title="Featured Playlists" items={playlists} showAllHref="/search" />
-      <Section title="Popular Artists" items={artists} circle showAllHref="/search" />
+      {isLoading ? (
+        <>
+          <SectionSkeleton title="Featured Playlists" />
+          <SectionSkeleton title="Popular Artists" circle />
+        </>
+      ) : (
+        <>
+          <Section title="Featured Playlists" items={playlists} showAllHref="/search" />
+          <Section title="Popular Artists" items={artists} circle showAllHref="/search" />
+        </>
+      )}
     </div>
   )
 }

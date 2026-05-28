@@ -1,5 +1,7 @@
 import { useNavigate } from 'react-router-dom'
+import { useQueryClient } from '@tanstack/react-query'
 import { Icon } from './Icon'
+import { api } from '@/lib/api'
 import type { Tile } from '@/types'
 
 const ROUTE: Record<string, (id: string) => string> = {
@@ -10,15 +12,36 @@ const ROUTE: Record<string, (id: string) => string> = {
   'sx-episode':  (id) => `/episode/${id}`,
 }
 
+const PREFETCH: Record<string, [string, (id: string) => Promise<unknown>]> = {
+  'sx-playlist': ['pl', (id) => api.playlist(id)],
+  'sx-album':    ['al', (id) => api.album(id)],
+  'sx-artist':   ['ar', (id) => api.artist(id)],
+  'sx-podcast':  ['pod', (id) => api.podcast(id)],
+  'sx-episode':  ['ep', (id) => api.episode(id)],
+}
+
 export function TileCard({ tile, circle }: { tile: Tile; circle?: boolean }) {
   const nav = useNavigate()
+  const qc = useQueryClient()
   const go = () => {
     const fn = ROUTE[tile.type]
     if (fn) nav(fn(tile.id))
   }
+  const prefetch = () => {
+    const p = PREFETCH[tile.type]
+    if (!p || !tile.id) return
+    const [prefix, fetcher] = p
+    qc.prefetchQuery({
+      queryKey: [prefix, tile.id],
+      queryFn: () => fetcher(tile.id),
+      staleTime: 30 * 60_000,
+    })
+  }
   return (
     <div
       onClick={go}
+      onMouseEnter={prefetch}
+      onFocus={prefetch}
       role="button"
       tabIndex={0}
       onKeyDown={(e) => { if (e.key === 'Enter') go() }}
