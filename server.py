@@ -440,7 +440,7 @@ def _spotapi():
     ns = types.SimpleNamespace()
     from spotapi.playlist import PublicPlaylist
     from spotapi.album import PublicAlbum
-    from spotapi.artist import PublicArtist
+    from spotapi.artist import Artist as PublicArtist  # upstream calls it just Artist
     from spotapi.song import Song
     from spotapi.podcast import Podcast
     ns.PublicPlaylist = PublicPlaylist
