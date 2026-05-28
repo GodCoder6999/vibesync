@@ -145,25 +145,47 @@ async function swapToCleanCover(pref, track) {
 
 function bindCatalogTiles() {
   document.body.addEventListener('click', async (e) => {
+    // Single track card → play that track only
+    const trackCard = e.target.closest('[data-track-json]');
+    if (trackCard && !e.target.closest('[data-cat-tile]')) {
+      e.preventDefault();
+      try {
+        const t = JSON.parse(trackCard.getAttribute('data-track-json'));
+        // Collect siblings as queue for next/prev
+        const row = trackCard.closest('.card-row, .h-scroll');
+        if (row && window.vsSetQueue) {
+          const all = [...row.querySelectorAll('[data-track-json]')].map(c => {
+            try { return JSON.parse(c.getAttribute('data-track-json')); } catch { return null; }
+          }).filter(Boolean);
+          const idx = all.findIndex(x => x.id === t.id);
+          window.vsSetQueue(all, idx >= 0 ? idx : 0);
+        } else if (window.vsAudio) {
+          window.vsAudio.src = t.url;
+          window.vsAudio.play();
+          if (window.updateNowPlaying) window.updateNowPlaying(t);
+          if (window.loadLyricsFor) window.loadLyricsFor(t);
+        }
+      } catch {}
+      return;
+    }
+
+    // Playlist/album tile → fetch tracks + queue them
     const tile = e.target.closest('[data-cat-tile]');
     if (!tile) return;
     e.preventDefault();
     let item;
     try { item = JSON.parse(tile.getAttribute('data-cat-tile')); } catch { return; }
     try {
-      let track = null;
+      let tracks = null;
       if ((item.type === 'playlist' || item.type === 'chart') && item.id) {
         const p = await window.cat.playlist(item.id);
-        track = (p.tracks || [])[0];
+        tracks = p.tracks || [];
       } else if (item.type === 'album' && item.id) {
         const a = await window.cat.album(item.id);
-        track = (a.tracks || [])[0];
+        tracks = a.tracks || [];
       }
-      if (track && window.vsAudio) {
-        window.vsAudio.src = track.url;
-        window.vsAudio.play();
-        if (window.updateNowPlaying) window.updateNowPlaying(track);
-        if (window.loadLyricsFor) window.loadLyricsFor(track);
+      if (tracks?.length && window.vsSetQueue) {
+        window.vsSetQueue(tracks, 0);
         return;
       }
     } catch (err) { console.warn('tile fetch fail', err); }

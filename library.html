@@ -3,10 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>VibeSync — My Library</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<title>Liked Songs – VibeSync</title>
+<link rel="icon" href="https://www.scdn.co/i/_global/favicon.png">
 <link rel="stylesheet" href="styles.css">
 <script>
 if (!localStorage.getItem('vs_user') || !localStorage.getItem('vs_prefs')) {
@@ -19,89 +17,66 @@ if (!localStorage.getItem('vs_user') || !localStorage.getItem('vs_prefs')) {
   <div id="chrome-sidebar"></div>
   <main class="main">
     <header class="topbar">
-      <div class="nav-arrows">
-        <button class="icon-btn"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg></button>
-        <button class="icon-btn"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6l6 6-6 6"/></svg></button>
+      <div class="tb-arrows">
+        <button class="arrow"><svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M11.03.47a.75.75 0 0 1 0 1.06L4.56 8l6.47 6.47a.75.75 0 1 1-1.06 1.06L2.44 8 9.97.47a.75.75 0 0 1 1.06 0z"/></svg></button>
+        <button class="arrow"><svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M4.97.47a.75.75 0 0 0 0 1.06L11.44 8l-6.47 6.47a.75.75 0 1 0 1.06 1.06L13.56 8 6.03.47a.75.75 0 0 0-1.06 0z"/></svg></button>
       </div>
-      <div class="search-wrap">
-        <div class="search">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-5-5"/></svg>
-          <input placeholder="Filter your library or search any song…" data-search-input>
+      <div class="tb-search-wrap">
+        <div class="tb-search">
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M10.533 1.279c-5.18 0-9.407 4.14-9.407 9.279s4.226 9.279 9.407 9.279c2.234 0 4.29-.77 5.907-2.058l4.353 4.353a1 1 0 1 0 1.414-1.414l-4.344-4.344a9.157 9.157 0 0 0 2.077-5.816c0-5.14-4.226-9.28-9.407-9.28zm-7.407 9.279c0-4.006 3.302-7.28 7.407-7.28s7.407 3.274 7.407 7.28-3.302 7.279-7.407 7.279-7.407-3.273-7.407-7.28z"/></svg>
+          <input placeholder="What do you want to play?" data-search-input>
         </div>
         <div class="search-results" data-search-results></div>
       </div>
-      <div class="top-actions">
-        <button class="btn-primary">+ New Playlist</button>
-        <div class="avatar">A</div>
+      <div class="tb-actions">
+        <button class="pill-btn dark" id="installBtn">Install App</button>
+        <button class="pill-btn" id="logoutBtn">Log out</button>
+        <button class="avatar-btn" id="userAvatar">U</button>
       </div>
     </header>
 
-    <section style="margin-top:24px;display:flex;align-items:flex-end;justify-content:space-between;gap:24px;flex-wrap:wrap">
-      <div>
-        <h1 style="font-size:34px;font-weight:800;letter-spacing:-0.03em">My Library</h1>
-        <p style="color:var(--muted);margin-top:8px">128 playlists · 2,431 songs · 47h 12m</p>
-      </div>
-      <div class="lib-tabs" role="tablist">
-        <button class="lib-tab active">All</button>
-        <button class="lib-tab">Playlists</button>
-        <button class="lib-tab">Albums</button>
-        <button class="lib-tab">Artists</button>
-        <button class="lib-tab">Songs</button>
-      </div>
-    </section>
-
-    <section class="section">
-      <div class="section-head"><h2>Your playlists</h2><a href="#">Sort</a></div>
-      <div class="grid">
-        <button class="card" data-play-query="Top hits 2025"><div class="cover v1"></div><h3>Liked Songs</h3><p>342 songs</p><div class="play-fab">▶</div></button>
-        <button class="card" data-play-query="Midnight City M83"><div class="cover v4"></div><h3>Midnight Drive</h3><p>by you · 58 songs</p><div class="play-fab">▶</div></button>
-        <button class="card" data-play-query="Lofi chill"><div class="cover v2"></div><h3>Lo-Fi Focus</h3><p>by you · 124 songs</p><div class="play-fab">▶</div></button>
-        <button class="card" data-play-query="Morning run mix"><div class="cover v3"></div><h3>Sunrise Run</h3><p>by you · 32 songs</p><div class="play-fab">▶</div></button>
-        <button class="card" data-play-query="Synthwave The Midnight"><div class="cover v10"></div><h3>Synthwave Nights</h3><p>by you · 87 songs</p><div class="play-fab">▶</div></button>
-        <button class="card" data-play-query="Indie bedroom pop"><div class="cover v9"></div><h3>Indie Bedroom</h3><p>by you · 64 songs</p><div class="play-fab">▶</div></button>
-      </div>
-    </section>
-
-    <section class="section">
-      <div class="section-head"><h2>Recently saved albums</h2><a href="#">See all</a></div>
-      <div class="grid">
-        <button class="card" data-play-query="Weeknd After Hours"><div class="cover v11"></div><h3>After Hours</h3><p>The Weeknd · 2020</p><div class="play-fab">▶</div></button>
-        <button class="card" data-play-query="Harry Styles Harrys House"><div class="cover v6"></div><h3>Harry's House</h3><p>Harry Styles · 2022</p><div class="play-fab">▶</div></button>
-        <button class="card" data-play-query="Taylor Swift Midnights"><div class="cover v8"></div><h3>Midnights</h3><p>Taylor Swift · 2022</p><div class="play-fab">▶</div></button>
-        <button class="card" data-play-query="Arijit Singh hits"><div class="cover v12"></div><h3>Arijit Singh Best</h3><p>Compilation</p><div class="play-fab">▶</div></button>
-      </div>
-    </section>
-
-    <section class="section">
-      <div class="section-head"><h2>Liked songs</h2><a href="#">Play all</a></div>
-      <div class="list">
-        <div class="list-head">
-          <div>#</div><div>Title</div><div class="col-album">Album</div><div>Added</div><div class="col-plays">Plays</div><div>⏱</div>
+    <div class="main-scroll">
+      <div class="page-hero" style="--hero-color:#4538d4">
+        <div class="page-hero-inner">
+          <div class="page-hero-art" style="background:linear-gradient(135deg,#4538d4,#a6b3ff);display:grid;place-items:center;color:#fff">
+            <svg width="80" height="80" viewBox="0 0 16 16" fill="currentColor"><path d="M15.724 4.22A4.313 4.313 0 0 0 12.192.814a4.269 4.269 0 0 0-3.622 1.13.837.837 0 0 1-1.14 0 4.272 4.272 0 0 0-6.21 5.855l5.916 7.05a1.128 1.128 0 0 0 1.727 0l5.916-7.05a4.228 4.228 0 0 0 .945-3.578z"/></svg>
+          </div>
+          <div class="page-hero-info">
+            <div class="type">Playlist</div>
+            <h1>Liked Songs</h1>
+            <div class="meta">
+              <strong id="userName">You</strong>
+              <span class="meta-dot"></span>
+              <span id="songCount">0 songs</span>
+            </div>
+          </div>
         </div>
-        <button class="row" data-play-query="Blinding Lights" style="text-align:left;width:100%;border:0;border-bottom:1px solid var(--border)"><div class="num">1</div><div class="title"><div class="mini-cover cover v1"></div><div class="title-text"><strong>Blinding Lights</strong><span>The Weeknd</span></div></div><div class="album">After Hours</div><div>Today</div><div class="plays">2.4B</div><div class="duration">3:20</div></button>
-        <button class="row" data-play-query="As It Was Harry Styles" style="text-align:left;width:100%;border:0;border-bottom:1px solid var(--border)"><div class="num">2</div><div class="title"><div class="mini-cover cover v2"></div><div class="title-text"><strong>As It Was</strong><span>Harry Styles</span></div></div><div class="album">Harry's House</div><div>2d ago</div><div class="plays">1.8B</div><div class="duration">2:47</div></button>
-        <button class="row" data-play-query="Flowers Miley Cyrus" style="text-align:left;width:100%;border:0;border-bottom:1px solid var(--border)"><div class="num">3</div><div class="title"><div class="mini-cover cover v3"></div><div class="title-text"><strong>Flowers</strong><span>Miley Cyrus</span></div></div><div class="album">Endless Summer Vacation</div><div>3d ago</div><div class="plays">1.5B</div><div class="duration">3:21</div></button>
-        <button class="row" data-play-query="Calm Down Rema Selena Gomez" style="text-align:left;width:100%;border:0;border-bottom:1px solid var(--border)"><div class="num">4</div><div class="title"><div class="mini-cover cover v4"></div><div class="title-text"><strong>Calm Down</strong><span>Rema, Selena Gomez</span></div></div><div class="album">Rave &amp; Roses</div><div>5d ago</div><div class="plays">1.9B</div><div class="duration">3:59</div></button>
-        <button class="row" data-play-query="Anti-Hero Taylor Swift" style="text-align:left;width:100%;border:0;border-bottom:1px solid var(--border)"><div class="num">5</div><div class="title"><div class="mini-cover cover v5"></div><div class="title-text"><strong>Anti-Hero</strong><span>Taylor Swift</span></div></div><div class="album">Midnights</div><div>1w ago</div><div class="plays">1.1B</div><div class="duration">3:20</div></button>
-        <button class="row" data-play-query="Kesariya Brahmastra" style="text-align:left;width:100%;border:0;border-bottom:1px solid var(--border)"><div class="num">6</div><div class="title"><div class="mini-cover cover v6"></div><div class="title-text"><strong>Kesariya</strong><span>Arijit Singh</span></div></div><div class="album">Brahmastra</div><div>1w ago</div><div class="plays">620M</div><div class="duration">4:28</div></button>
-        <button class="row" data-play-query="Pasoori" style="text-align:left;width:100%;border:0;border-bottom:1px solid var(--border)"><div class="num">7</div><div class="title"><div class="mini-cover cover v7"></div><div class="title-text"><strong>Pasoori</strong><span>Ali Sethi, Shae Gill</span></div></div><div class="album">Coke Studio S14</div><div>2w ago</div><div class="plays">740M</div><div class="duration">4:01</div></button>
-        <button class="row" data-play-query="Apna Bana Le Bhediya" style="text-align:left;width:100%;border:0"><div class="num">8</div><div class="title"><div class="mini-cover cover v8"></div><div class="title-text"><strong>Apna Bana Le</strong><span>Arijit Singh</span></div></div><div class="album">Bhediya</div><div>2w ago</div><div class="plays">410M</div><div class="duration">4:06</div></button>
       </div>
-    </section>
 
-    <section class="section">
-      <div class="section-head"><h2>Followed artists</h2><a href="#">See all</a></div>
-      <div class="grid">
-        <button class="card" data-play-query="The Weeknd" style="text-align:center"><div class="cover v6" style="border-radius:50%"></div><h3>The Weeknd</h3><p>120M followers</p></button>
-        <button class="card" data-play-query="Arijit Singh" style="text-align:center"><div class="cover v3" style="border-radius:50%"></div><h3>Arijit Singh</h3><p>90M followers</p></button>
-        <button class="card" data-play-query="Taylor Swift" style="text-align:center"><div class="cover v8" style="border-radius:50%"></div><h3>Taylor Swift</h3><p>110M followers</p></button>
-        <button class="card" data-play-query="Harry Styles" style="text-align:center"><div class="cover v11" style="border-radius:50%"></div><h3>Harry Styles</h3><p>75M followers</p></button>
-        <button class="card" data-play-query="Dua Lipa" style="text-align:center"><div class="cover v9" style="border-radius:50%"></div><h3>Dua Lipa</h3><p>62M followers</p></button>
-        <button class="card" data-play-query="Ed Sheeran" style="text-align:center"><div class="cover v2" style="border-radius:50%"></div><h3>Ed Sheeran</h3><p>112M followers</p></button>
+      <div class="action-bar">
+        <button class="play-big" id="playAllBtn"><svg viewBox="0 0 16 16" fill="currentColor"><path d="M3 1.713a.7.7 0 0 1 1.05-.607l10.89 6.288a.7.7 0 0 1 0 1.212L4.05 14.894A.7.7 0 0 1 3 14.288V1.713z"/></svg></button>
+        <button class="ab-icon"><svg viewBox="0 0 16 16" fill="currentColor"><path d="M13.151.922a.75.75 0 1 0-1.06 1.06L13.109 3H11.16a3.75 3.75 0 0 0-2.873 1.34l-6.173 7.356A2.25 2.25 0 0 1 .39 12.5H0V14h.391a3.75 3.75 0 0 0 2.873-1.34l6.173-7.356a2.25 2.25 0 0 1 1.724-.804h1.947l-1.017 1.018a.75.75 0 0 0 1.06 1.06L15.98 3.75 13.15.922zM.391 3.5H0V2h.391c1.109 0 2.16.49 2.873 1.34L4.89 5.277l-.979 1.167-1.796-2.14A2.25 2.25 0 0 0 .39 3.5z"/></svg></button>
+        <button class="ab-icon"><svg viewBox="0 0 16 16" fill="currentColor"><circle cx="2" cy="8" r="1.5"/><circle cx="8" cy="8" r="1.5"/><circle cx="14" cy="8" r="1.5"/></svg></button>
       </div>
-    </section>
+
+      <div class="song-table">
+        <div class="row head">
+          <div class="num">#</div>
+          <div>Title</div>
+          <div>Album</div>
+          <div>Date added</div>
+          <div class="duration">⏱</div>
+        </div>
+        <div id="songList"></div>
+        <div id="emptyMsg" style="display:none;padding:60px 16px;text-align:center;color:var(--text-muted)">
+          <h3 style="font-size:18px;margin-bottom:8px;color:var(--text)">Songs you like will appear here</h3>
+          <p>Save songs by tapping the heart icon.</p>
+        </div>
+      </div>
+    </div>
   </main>
 </div>
+
 <div id="chrome-mini"></div>
 <script src="partials.js"></script>
 <script>mountChrome('library');</script>
@@ -109,5 +84,58 @@ if (!localStorage.getItem('vs_user') || !localStorage.getItem('vs_prefs')) {
 <script src="catalog.js"></script>
 <script src="api.js"></script>
 <script src="app.js"></script>
+<script>
+const user = JSON.parse(localStorage.getItem('vs_user') || '{}');
+document.getElementById('userName').textContent = user.name || 'You';
+
+const liked = JSON.parse(localStorage.getItem('vs_liked') || '[]');
+const list = document.getElementById('songList');
+const empty = document.getElementById('emptyMsg');
+
+function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function escAttr(s) { return String(s).replace(/'/g, '&#39;'); }
+function fmt(s) { const m = Math.floor(s/60), sec = String(Math.floor(s%60)).padStart(2,'0'); return `${m}:${sec}`; }
+
+// Load track meta for each liked id via search
+async function loadLiked() {
+  if (!liked.length) {
+    empty.style.display = 'block';
+    document.getElementById('songCount').textContent = '0 songs';
+    return;
+  }
+  document.getElementById('songCount').textContent = `${liked.length} song${liked.length===1?'':'s'}`;
+  // We saved only IDs. Without full tracks, fetch each via search by ID is not supported by JioSaavn quick.
+  // Workaround: store full track JSON in vs_liked_tracks; check there.
+  const fullLiked = JSON.parse(localStorage.getItem('vs_liked_tracks') || '[]').filter(Boolean);
+  if (!fullLiked.length) {
+    empty.style.display = 'block';
+    return;
+  }
+  list.innerHTML = fullLiked.map((t, i) => `
+    <button class="row" data-idx="${i}">
+      <div class="num">${i+1}</div>
+      <div class="title-cell">
+        <div class="row-cover" ${t.img ? `style="background-image:url(&quot;${t.img}&quot;)"` : ''}></div>
+        <div class="title-text"><strong>${esc(t.title)}</strong><span>${esc(t.artist || '')}</span></div>
+      </div>
+      <div>${esc(t.album || '')}</div>
+      <div>Recently</div>
+      <div class="duration">${fmt(t.duration || 0)}</div>
+    </button>`).join('');
+
+  list.querySelectorAll('.row[data-idx]').forEach(r => {
+    r.addEventListener('click', () => {
+      const i = parseInt(r.dataset.idx, 10);
+      if (window.vsSetQueue) window.vsSetQueue(fullLiked, i);
+    });
+  });
+
+  document.getElementById('playAllBtn').addEventListener('click', () => {
+    if (window.vsSetQueue) window.vsSetQueue(fullLiked, 0);
+  });
+}
+
+loadLiked();
+</script>
 </body>
 </html>

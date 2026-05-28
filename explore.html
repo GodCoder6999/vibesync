@@ -3,10 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>VibeSync — Search</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<title>Search – VibeSync</title>
+<link rel="icon" href="https://www.scdn.co/i/_global/favicon.png">
 <link rel="stylesheet" href="styles.css">
 <script>
 if (!localStorage.getItem('vs_user') || !localStorage.getItem('vs_prefs')) {
@@ -19,38 +17,34 @@ if (!localStorage.getItem('vs_user') || !localStorage.getItem('vs_prefs')) {
   <div id="chrome-sidebar"></div>
   <main class="main">
     <header class="topbar">
-      <div class="nav-arrows">
-        <button class="icon-btn"><svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M11.03.47a.75.75 0 0 1 0 1.06L4.56 8l6.47 6.47a.75.75 0 1 1-1.06 1.06L2.44 8 9.97.47a.75.75 0 0 1 1.06 0z"/></svg></button>
-        <button class="icon-btn"><svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M4.97.47a.75.75 0 0 0 0 1.06L11.44 8l-6.47 6.47a.75.75 0 1 0 1.06 1.06L13.56 8 6.03.47a.75.75 0 0 0-1.06 0z"/></svg></button>
+      <div class="tb-arrows">
+        <button class="arrow" aria-label="Back"><svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M11.03.47a.75.75 0 0 1 0 1.06L4.56 8l6.47 6.47a.75.75 0 1 1-1.06 1.06L2.44 8 9.97.47a.75.75 0 0 1 1.06 0z"/></svg></button>
+        <button class="arrow" aria-label="Forward"><svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M4.97.47a.75.75 0 0 0 0 1.06L11.44 8l-6.47 6.47a.75.75 0 1 0 1.06 1.06L13.56 8 6.03.47a.75.75 0 0 0-1.06 0z"/></svg></button>
       </div>
-      <div class="search-wrap">
-        <div class="search">
-          <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M7 1.75a5.25 5.25 0 1 0 0 10.5 5.25 5.25 0 0 0 0-10.5zM.25 7a6.75 6.75 0 1 1 12.096 4.12l3.184 3.185a.75.75 0 1 1-1.06 1.06L11.304 12.2A6.75 6.75 0 0 1 .25 7z"/></svg>
-          <input placeholder="What do you want to play?" data-search-input>
+      <div class="tb-search-wrap">
+        <div class="tb-search">
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M10.533 1.279c-5.18 0-9.407 4.14-9.407 9.279s4.226 9.279 9.407 9.279c2.234 0 4.29-.77 5.907-2.058l4.353 4.353a1 1 0 1 0 1.414-1.414l-4.344-4.344a9.157 9.157 0 0 0 2.077-5.816c0-5.14-4.226-9.28-9.407-9.28zm-7.407 9.279c0-4.006 3.302-7.28 7.407-7.28s7.407 3.274 7.407 7.28-3.302 7.279-7.407 7.279-7.407-3.273-7.407-7.28z"/></svg>
+          <input id="exploreInput" placeholder="What do you want to play?" data-search-input>
         </div>
         <div class="search-results" data-search-results></div>
       </div>
-      <div class="top-actions">
-        <div class="avatar">U</div>
+      <div class="tb-actions">
+        <button class="pill-btn dark" id="installBtn">Install App</button>
+        <button class="pill-btn" id="logoutBtn">Log out</button>
+        <button class="avatar-btn" id="userAvatar">U</button>
       </div>
     </header>
 
-    <section class="home-header" style="border-bottom:0">
-      <h1>Browse all</h1>
-    </section>
+    <div class="main-scroll">
+      <section id="resultsArea"></section>
 
-    <section style="padding: 16px 0;">
-      <div class="browse-grid" id="browseGrid"></div>
-    </section>
+      <section class="section" id="browseSection" style="display:block">
+        <div class="section-head"><h2>Browse all</h2></div>
+        <div class="browse-grid" id="browseGrid"></div>
+      </section>
+    </div>
   </main>
 </div>
-
-<nav class="bottom-nav">
-  <button class="bn-item" onclick="location.href='index.html'"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12.5 3.247a1 1 0 0 0-1 0L4 7.577V20h4.5v-6a1 1 0 0 1 1-1h5a1 1 0 0 1 1 1v6H20V7.577l-7.5-4.33z"/></svg>Home</button>
-  <button class="bn-item active"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M10.533 1.279c-5.18 0-9.407 4.14-9.407 9.279s4.226 9.279 9.407 9.279c2.234 0 4.29-.77 5.907-2.058l4.353 4.353a1 1 0 1 0 1.414-1.414l-4.344-4.344a9.157 9.157 0 0 0 2.077-5.816c0-5.14-4.226-9.28-9.407-9.28zm-7.407 9.279c0-4.006 3.302-7.28 7.407-7.28s7.407 3.274 7.407 7.28-3.302 7.279-7.407 7.279-7.407-3.273-7.407-7.28z"/></svg>Search</button>
-  <button class="bn-item" onclick="location.href='library.html'"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 22a1 1 0 0 1-1-1V3a1 1 0 0 1 2 0v18a1 1 0 0 1-1 1zM15.5 2.134A1 1 0 0 0 14 3v18a1 1 0 0 0 2 0V4.732l4 2.31V21a1 1 0 1 0 2 0V6.464a1 1 0 0 0-.5-.866l-6-3.464zM9 2a1 1 0 0 0-1 1v18a1 1 0 1 0 2 0V3a1 1 0 0 0-1-1z"/></svg>Library</button>
-  <button class="bn-item"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M11.999 1.10059C5.97179 1.10059 1.09949 5.97289 1.09949 12.0001C1.09949 18.0273 5.97179 22.8996 11.999 22.8996C18.0262 22.8996 22.8985 18.0273 22.8985 12.0001C22.8985 5.97289 18.0262 1.10059 11.999 1.10059zM5 11h6V5h2v6h6v2h-6v6h-2v-6H5v-2z"/></svg>Premium</button>
-</nav>
 
 <div id="chrome-mini"></div>
 <script src="partials.js"></script>
@@ -63,10 +57,10 @@ if (!localStorage.getItem('vs_user') || !localStorage.getItem('vs_prefs')) {
 const GENRES = [
   ['Bollywood', 'Arijit Singh Tum Hi Ho', 'bg-c3'],
   ['Pop', 'Blinding Lights', 'bg-c1'],
-  ['Hip-Hop', 'Drake Gods Plan', 'bg-c7'],
+  ['Hip-Hop', 'Drake', 'bg-c7'],
   ['Rock', 'Imagine Dragons Believer', 'bg-c2'],
   ['Indie', 'Heat Waves Glass Animals', 'bg-c5'],
-  ['Chill', 'Lofi chill beats', 'bg-c9'],
+  ['Chill', 'Lofi chill', 'bg-c9'],
   ['Punjabi', 'AP Dhillon Excuses', 'bg-c8'],
   ['K-Pop', 'BTS Dynamite', 'bg-c4'],
   ['Electronic', 'Daft Punk One More Time', 'bg-c11'],
@@ -76,42 +70,105 @@ const GENRES = [
   ['Devotional', 'Hanuman Chalisa', 'bg-c1'],
   ['Party', 'Calvin Harris One Kiss', 'bg-c3'],
   ['Sad', 'Someone Like You Adele', 'bg-c2'],
-  ['Podcasts', 'Ranveer Show podcast', 'bg-c4'],
-  ['Focus', 'Lofi study music', 'bg-c5'],
+  ['Podcasts', 'Ranveer Show', 'bg-c4'],
+  ['Focus', 'Lofi study', 'bg-c5'],
   ['Afrobeats', 'Calm Down Rema', 'bg-c10'],
   ['Tamil', 'AR Rahman Tamil', 'bg-c8'],
-  ['Telugu', 'Naatu Naatu RRR', 'bg-c9'],
+  ['Telugu', 'Naatu Naatu', 'bg-c9'],
   ['Classical', 'Beethoven Moonlight Sonata', 'bg-c11'],
   ['R&amp;B', 'Earned It The Weeknd', 'bg-c7'],
-  ['Marathi', 'Marathi songs', 'bg-c12'],
-  ['Bengali', 'Rabindra Sangeet', 'bg-c6']
 ];
-const grid = document.getElementById('browseGrid');
-grid.innerHTML = GENRES.map(([title, q, cls]) => `
-  <button class="browse-card ${cls}" data-play-query="${q}">
+
+function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function escAttr(s) { return String(s).replace(/'/g, '&#39;'); }
+
+document.getElementById('browseGrid').innerHTML = GENRES.map(([title, q, cls]) => `
+  <button class="browse-card ${cls}" data-cat-tile='${escAttr(JSON.stringify({title, query: q}))}'>
     <h3>${title}</h3>
     <div class="bc-art" data-genre-art="${q}"></div>
-  </button>
-`).join('');
+  </button>`).join('');
+
 // Lazy-load genre art via JioSaavn
 (async () => {
-  const arts = grid.querySelectorAll('[data-genre-art]');
+  const arts = document.querySelectorAll('[data-genre-art]');
   for (const el of arts) {
     const q = el.dataset.genreArt;
-    const cacheKey = 'vs_genre_' + q;
-    let img = sessionStorage.getItem(cacheKey);
+    const key = 'vs_genre_' + q;
+    let img = sessionStorage.getItem(key);
     if (!img) {
       try {
-        const r = await fetch('/api/search?q=' + encodeURIComponent(q) + '&limit=1');
-        const j = await r.json();
-        img = j.results?.[0]?.img || '';
-        if (img) sessionStorage.setItem(cacheKey, img);
+        const r = await window.cat.search(q, 1);
+        img = r.results?.[0]?.img || '';
+        if (img) sessionStorage.setItem(key, img);
       } catch {}
     }
     if (img) el.style.backgroundImage = `url("${img}")`;
-    await new Promise(r => setTimeout(r, 40));
+    await new Promise(r => setTimeout(r, 30));
   }
 })();
+
+// Bind catalog-tile click (search-and-play first match)
+document.body.addEventListener('click', (e) => {
+  const tile = e.target.closest('[data-cat-tile]');
+  if (!tile) return;
+  e.preventDefault();
+  try {
+    const item = JSON.parse(tile.getAttribute('data-cat-tile'));
+    if (item.query && window.searchAndPlay) window.searchAndPlay(item.query);
+  } catch {}
+});
+
+// Initial query from ?q= or #title
+async function runQueryFromUrl() {
+  const params = new URLSearchParams(location.search);
+  const q = params.get('q') || decodeURIComponent(location.hash.slice(1) || '');
+  if (!q) return;
+  document.getElementById('exploreInput').value = q;
+  await runSearch(q);
+}
+
+async function runSearch(q) {
+  const area = document.getElementById('resultsArea');
+  area.innerHTML = `<section class="section"><div class="section-head"><h2>Searching “${esc(q)}”…</h2></div></section>`;
+  const data = await window.cat.search(q, 12);
+  const tracks = (data.results || []).filter(t => {
+    const s = (t.title || '').toLowerCase();
+    return !s.includes('karaoke') && !s.includes('instrumental');
+  }).slice(0, 12);
+  if (!tracks.length) {
+    area.innerHTML = `<section class="section"><div class="section-head"><h2>No results for “${esc(q)}”</h2></div></section>`;
+    document.getElementById('browseSection').style.display = 'block';
+    return;
+  }
+  document.getElementById('browseSection').style.display = 'none';
+  area.innerHTML = `
+    <section class="section">
+      <div class="section-head"><h2>Top results</h2></div>
+      <div class="card-row fluid">
+        ${tracks.map(t => `
+          <button class="card" data-track-json='${escAttr(JSON.stringify(t))}'>
+            <div class="card-cover" ${t.img ? `style="background-image:url(&quot;${t.img}&quot;)"` : ''}></div>
+            <h3>${esc(t.title)}</h3>
+            <p>${esc(t.artist || '')}</p>
+            <div class="card-fab"><svg viewBox="0 0 16 16" fill="currentColor"><path d="M3 1.713a.7.7 0 0 1 1.05-.607l10.89 6.288a.7.7 0 0 1 0 1.212L4.05 14.894A.7.7 0 0 1 3 14.288V1.713z"/></svg></div>
+          </button>`).join('')}
+      </div>
+    </section>`;
+
+  // Wire click on result cards → play + set queue
+  area.querySelectorAll('[data-track-json]').forEach((c, i) => {
+    c.addEventListener('click', (e) => {
+      e.preventDefault();
+      try { window.vsSetQueue(tracks, i); } catch {}
+    });
+  });
+}
+
+document.getElementById('exploreInput').addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') runSearch(e.target.value.trim());
+});
+
+runQueryFromUrl();
 </script>
 </body>
 </html>

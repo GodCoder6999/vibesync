@@ -140,10 +140,10 @@ function updateNowPlaying(track, state = {}) {
       el.style.backgroundImage = `url("${track.img}")`;
       el.style.backgroundSize = 'cover';
       el.style.backgroundPosition = 'center';
-      el.style.background = `url("${track.img}") center/cover`;
     }
   });
   syncPlayIcons();
+  document.dispatchEvent(new CustomEvent('vs:trackchange', { detail: track }));
 }
 
 function syncPlayIcons() {
