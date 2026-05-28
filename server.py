@@ -417,10 +417,41 @@ def _sx_track_to_tile(t: dict, idx: int = 0) -> dict:
     }
 
 
+_sa_cache = {"mod": None}
+
+
 def _spotapi():
-    """Lazy import — keeps boot fast and lets server start even if SpotAPI fails."""
-    import importlib
-    return importlib.import_module("spotapi")
+    """Lazy + cached import. Resolves circular-import races by importing
+    every needed submodule eagerly the first time and stashing on a
+    namespace-like object."""
+    if _sa_cache["mod"] is not None:
+        return _sa_cache["mod"]
+    import importlib, types
+    # Force-load submodules first to avoid partial-init lookups
+    mods = [
+        "spotapi", "spotapi.playlist", "spotapi.album", "spotapi.artist",
+        "spotapi.song", "spotapi.podcast", "spotapi.public",
+    ]
+    for m in mods:
+        try:
+            importlib.import_module(m)
+        except Exception:
+            pass
+    ns = types.SimpleNamespace()
+    from spotapi.playlist import PublicPlaylist
+    from spotapi.album import PublicAlbum
+    from spotapi.artist import PublicArtist
+    from spotapi.song import Song
+    from spotapi.podcast import Podcast
+    ns.PublicPlaylist = PublicPlaylist
+    ns.PublicAlbum = PublicAlbum
+    ns.PublicArtist = PublicArtist
+    ns.Song = Song
+    ns.Podcast = Podcast
+    spm = importlib.import_module("spotapi")
+    ns.__version__ = getattr(spm, "__version__", "unknown")
+    _sa_cache["mod"] = ns
+    return ns
 
 
 @app.route("/api/sx-health")
@@ -622,8 +653,8 @@ def sx_playlist():
         return jsonify(_sx_cache[pid])
     try:
         sa = _spotapi()
-        pl = sa.PublicPlaylist(pid) if hasattr(sa, "PublicPlaylist") else sa.Playlist(pid)
-        info = pl.get_playlist_info(limit=100) if hasattr(pl, "get_playlist_info") else pl.get_info()
+        pl = sa.PublicPlaylist(pid)
+        info = pl.get_playlist_info(limit=100)
         # SpotAPI returns nested GraphQL shape
         root = info.get("data", {}).get("playlistV2") if isinstance(info, dict) else None
         if not root:
@@ -668,8 +699,8 @@ def sx_album():
         return jsonify(_sx_cache[aid])
     try:
         sa = _spotapi()
-        alb = sa.Album(aid)
-        info = alb.get_album_info() if hasattr(alb, "get_album_info") else alb.get_info()
+        alb = sa.PublicAlbum(aid)
+        info = alb.get_album_info()
         root = info.get("data", {}).get("albumUnion") if isinstance(info, dict) else None
         if not root:
             root = info if isinstance(info, dict) else {}
@@ -720,8 +751,8 @@ def sx_artist():
                 pass
             if not aid:
                 return jsonify(error="not found"), 404
-        ar = sa.Artist(aid)
-        info = ar.get_artist_info() if hasattr(ar, "get_artist_info") else ar.get_info()
+        ar = sa.PublicArtist(aid)
+        info = ar.get_artist_info()
         root = info.get("data", {}).get("artistUnion") if isinstance(info, dict) else None
         if not root:
             root = info if isinstance(info, dict) else {}
@@ -838,7 +869,7 @@ def _prewarm_curated():
             if key in _sx_cache:
                 continue
             try:
-                ar = sa.Artist(aid)
+                ar = sa.PublicArtist(aid)
                 info = ar.get_artist_info()
                 root = (info.get("data") or {}).get("artistUnion") or info or {}
                 profile = root.get("profile") or {}
@@ -880,8 +911,16 @@ def _prewarm_curated():
     threading.Thread(target=worker, daemon=True).start()
 
 
-# Kick prewarm on import (Gunicorn worker boot).
-_prewarm_curated()
+# Defer prewarm to first request so spotapi finishes init first (avoids
+# circular-import races when the daemon thread races against module load).
+_prewarm_started = {"v": False}
+
+
+@app.before_request
+def _maybe_prewarm():
+    if not _prewarm_started["v"]:
+        _prewarm_started["v"] = True
+        _prewarm_curated()
 
 
 @app.route("/api/sx-home")
