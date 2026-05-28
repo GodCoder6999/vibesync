@@ -154,6 +154,13 @@ def health():
     return jsonify(ok=True, service="vibesync", runtime="python-render")
 
 
+@app.route("/api/ping")
+def ping():
+    """Tiny endpoint for keep-alive pings (cron-job.org etc.) so the
+    Render free-tier dyno never sleeps."""
+    return jsonify(pong=True)
+
+
 # ---------- JioSaavn ----------
 @app.route("/api/search")
 def search():
@@ -296,7 +303,7 @@ _sx_cache = {}  # id -> normalized dict (cuts duplicate scrapes)
 # requests at once; without this they pile up and Spotify starts
 # returning empty/error payloads (surfaced as 500s).
 import threading as _threading
-_sx_sem = _threading.Semaphore(2)
+_sx_sem = _threading.Semaphore(3)
 
 
 def _sx_call(fn, *args, **kwargs):
