@@ -13,6 +13,7 @@ import Profile from './pages/Profile'
 import Settings from './pages/Settings'
 import Welcome from './pages/Welcome'
 import Login from './pages/Login'
+import UserPlaylist from './pages/UserPlaylist'
 
 export default function App() {
   return (
@@ -25,6 +26,7 @@ export default function App() {
         <Route path="/search/:query" element={<Search />} />
         <Route path="/library" element={<Library />} />
         <Route path="/playlist/:id" element={<Playlist />} />
+        <Route path="/me/playlist/:id" element={<UserPlaylist />} />
         <Route path="/album/:id" element={<Album />} />
         <Route path="/artist/:id" element={<Artist />} />
         <Route path="/podcast/:id" element={<Podcast />} />

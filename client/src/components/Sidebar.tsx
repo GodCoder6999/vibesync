@@ -1,7 +1,10 @@
 import { useEffect, useRef, useState } from 'react'
-import { Link, NavLink } from 'react-router-dom'
+import { Link, NavLink, useNavigate } from 'react-router-dom'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useLikes } from '@/stores/likesStore'
 import { useUi } from '@/stores/uiStore'
+import { useAuth } from '@/stores/authStore'
+import { playlistsApi } from '@/lib/playlists'
 import { Icon } from './Icon'
 
 const MIN_WIDTH = 80
@@ -11,7 +14,21 @@ const DEFAULT_WIDTH = 300
 
 export default function Sidebar() {
   const liked = useLikes((s) => s.tracks.length)
-  const { sidebarCollapsed, toggleSidebar, libFilter, setLibFilter } = useUi()
+  const { sidebarCollapsed, toggleSidebar, libFilter, setLibFilter, toast } = useUi()
+  const user = useAuth((s) => s.user)
+  const nav = useNavigate()
+  const qc = useQueryClient()
+  const { data: myPls = [] } = useQuery({
+    queryKey: ['my-playlists', user?.id],
+    queryFn: () => user ? playlistsApi.list(user.id) : Promise.resolve([]),
+    enabled: !!user,
+  })
+  async function createPl() {
+    if (!user) { toast('Sign in to create playlists'); return }
+    const p = await playlistsApi.create(user.id, `My Playlist #${myPls.length + 1}`)
+    qc.invalidateQueries({ queryKey: ['my-playlists'] })
+    if (p) nav(`/me/playlist/${p.id}`)
+  }
 
   const [width, setWidth] = useState<number>(() => {
     const v = Number(localStorage.getItem('vs-sb-width'))
@@ -67,7 +84,7 @@ export default function Sidebar() {
             {!compact && <span className="font-bold">Your Library</span>}
           </button>
           {!compact && (
-            <button title="Create playlist" className="w-8 h-8 rounded-full hover:bg-[var(--color-bg-hover)] text-[var(--color-text-muted)] hover:text-white grid place-items-center text-lg">+</button>
+            <button onClick={createPl} title="Create playlist" className="w-8 h-8 rounded-full hover:bg-[var(--color-bg-hover)] text-[var(--color-text-muted)] hover:text-white grid place-items-center text-lg">+</button>
           )}
         </header>
 
@@ -99,6 +116,20 @@ export default function Sidebar() {
               )}
             </Link>
           )}
+
+          {(libFilter === 'all' || libFilter === 'playlists') && myPls.map((p) => (
+            <Link key={p.id} to={`/me/playlist/${p.id}`} className="flex items-center gap-3 p-2 rounded hover:bg-[var(--color-bg-hover)]" title={p.title}>
+              <div className="w-12 h-12 rounded bg-[var(--color-bg-pressed)] grid place-items-center text-[var(--color-text-muted)] shrink-0 bg-cover bg-center" style={{ backgroundImage: p.cover_url ? `url("${p.cover_url}")` : undefined }}>
+                {!p.cover_url && '🎵'}
+              </div>
+              {!compact && (
+                <div className="min-w-0">
+                  <div className="text-white truncate">{p.title}</div>
+                  <div className="text-xs text-[var(--color-text-muted)]">Playlist · {user?.display_name || user?.email}</div>
+                </div>
+              )}
+            </Link>
+          ))}
         </div>
       </div>
 

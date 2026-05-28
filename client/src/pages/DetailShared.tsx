@@ -2,9 +2,12 @@ import type { Track } from '@/types'
 import { usePlayer } from '@/stores/playerStore'
 import { useUi } from '@/stores/uiStore'
 import { useLikes } from '@/stores/likesStore'
+import { useAuth } from '@/stores/authStore'
+import { useQueryClient, useQuery } from '@tanstack/react-query'
 import { useNavigate } from 'react-router-dom'
 import { Icon } from '@/components/Icon'
 import { useDominantColor } from '@/hooks/useDominantColor'
+import { playlistsApi } from '@/lib/playlists'
 
 function fmt(s: number) {
   if (!s) return '0:00'
@@ -54,20 +57,34 @@ export function TrackTable({ tracks, showAlbum }: { tracks: Track[]; showAlbum?:
   const toast = useUi((s) => s.toast)
   const toggleLike = useLikes((s) => s.toggle)
   const isLiked = useLikes((s) => s.isLiked)
+  const user = useAuth((s) => s.user)
+  const qc = useQueryClient()
   const nav = useNavigate()
+
+  const { data: myPls = [] } = useQuery({
+    queryKey: ['my-playlists', user?.id],
+    queryFn: () => user ? playlistsApi.list(user.id) : Promise.resolve([]),
+    enabled: !!user,
+  })
 
   function onContext(e: React.MouseEvent, t: Track) {
     e.preventDefault()
-    openMenu({
-      x: e.clientX,
-      y: e.clientY,
-      items: [
-        { label: 'Add to queue', onClick: () => { usePlayer.setState({ queue: [...queue, t] }); toast('Added to queue') } },
-        { label: isLiked(t.id) ? 'Remove from Liked Songs' : 'Save to your Liked Songs', onClick: () => { toggleLike(t); toast(isLiked(t.id) ? 'Removed' : 'Saved to Liked Songs') } },
-        { label: 'Go to artist', onClick: () => nav(`/search/${encodeURIComponent(t.artist || '')}`), divider: true },
-        { label: 'Copy song link', onClick: () => { navigator.clipboard.writeText(`${location.origin}/`); toast('Link copied') } },
-      ],
-    })
+    const items: any[] = [
+      { label: 'Add to queue', onClick: () => { usePlayer.setState({ queue: [...queue, t] }); toast('Added to queue') } },
+      { label: isLiked(t.id) ? 'Remove from Liked Songs' : 'Save to your Liked Songs', onClick: () => { toggleLike(t); toast(isLiked(t.id) ? 'Removed' : 'Saved to Liked Songs') } },
+    ]
+    if (user && myPls.length) {
+      items.push({ divider: true, label: 'Add to playlist', onClick: () => {} })
+      for (const p of myPls.slice(0, 8)) {
+        items.push({
+          label: `  → ${p.title}`,
+          onClick: async () => { await playlistsApi.addTrack(p.id, t); qc.invalidateQueries({ queryKey: ['user-pl-tracks', p.id] }); toast(`Added to ${p.title}`) }
+        })
+      }
+    }
+    items.push({ divider: true, label: 'Go to artist', onClick: () => nav(`/search/${encodeURIComponent(t.artist || '')}`) })
+    items.push({ label: 'Copy song link', onClick: () => { navigator.clipboard.writeText(`${location.origin}/`); toast('Link copied') } })
+    openMenu({ x: e.clientX, y: e.clientY, items })
   }
 
   return (
