@@ -1,0 +1,53 @@
+@import "tailwindcss";
+
+@theme {
+  --color-bg: #000000;
+  --color-bg-panel: #121212;
+  --color-bg-elevated: #1a1a1a;
+  --color-bg-hover: #1f1f1f;
+  --color-bg-pressed: #2a2a2a;
+  --color-text: #ffffff;
+  --color-text-muted: #b3b3b3;
+  --color-text-subdued: #6a6a6a;
+  --color-accent: #1ed760;
+  --color-accent-hover: #1fdf64;
+  --color-accent-pressed: #169c46;
+  --color-danger: #f15e6c;
+
+  --font-sans: 'CircularSp', 'CircularSp-Arab', 'CircularSp-Hebr', 'system-ui', -apple-system, sans-serif;
+
+  --radius-card: 8px;
+  --radius-pill: 9999px;
+  --shadow-card: 0 8px 24px rgba(0,0,0,0.5);
+}
+
+@font-face {
+  font-family: 'CircularSp';
+  src: url('https://encore.scdn.co/fonts/CircularSp-Book-46e0fd0d4651e0bb38f6c1da43e0f15c.woff2') format('woff2');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'CircularSp';
+  src: url('https://encore.scdn.co/fonts/CircularSp-Bold-fc04d6c7b6c0d8a08442fa48e93d4d49.woff2') format('woff2');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+* { box-sizing: border-box; }
+html, body, #root { height: 100%; }
+body {
+  margin: 0;
+  background: var(--color-bg);
+  color: var(--color-text);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  user-select: none;
+}
+::-webkit-scrollbar { width: 12px; height: 12px; }
+::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.18); border-radius: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+button { font: inherit; color: inherit; background: transparent; border: 0; cursor: pointer; }
+a { color: inherit; text-decoration: none; }
