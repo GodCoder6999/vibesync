@@ -56,8 +56,8 @@ const SIDEBAR = (active) => `
     <div class="sb-search-row">${ICON.searchSm}</div>
     <div class="sb-list" id="sbList">
       ${sbItem('playlist', 'Liked Songs', 'Playlist · 12 songs', '#1ED760')}
-      ${sbItem('playlist', 'Today\\'s Top Hits', 'Playlist · VibeSync')}
-      ${sbItem('playlist', 'New Releases', 'Playlist · JioSaavn')}
+      ${sbItem('playlist', "Today's Top Hits", 'Playlist · VibeSync')}
+      ${sbItem('playlist', 'New Releases', 'Playlist · VibeSync')}
       ${sbItem('artist', 'Arijit Singh', 'Artist')}
       ${sbItem('artist', 'The Weeknd', 'Artist')}
       ${sbItem('album', 'Brahmastra', 'Album · Pritam')}

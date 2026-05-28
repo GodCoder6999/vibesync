@@ -364,9 +364,10 @@ input { font: inherit; }
 .qp-tile:hover .qp-fab { opacity: 1; transform: translate(0); }
 .qp-tile .qp-cover {
   width: 64px; height: 64px;
-  background: var(--bg-elev) center/cover no-repeat;
+  background: var(--bg-elev) center/115% no-repeat;
   flex-shrink: 0;
   box-shadow: var(--shadow-card);
+  overflow: hidden;
 }
 .qp-tile strong {
   flex: 1; padding: 0 12px;
@@ -452,7 +453,7 @@ input { font: inherit; }
   border-radius: 6px;
   overflow: hidden;
   margin-bottom: 12px;
-  background: var(--bg-elev) center/cover no-repeat;
+  background: var(--bg-elev) center/115% no-repeat;
   box-shadow: var(--shadow-card);
 }
 .card.artist .card-cover { border-radius: 50%; }

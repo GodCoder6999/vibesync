@@ -64,10 +64,17 @@ async function doRender() {
       </section>`).join('');
 
     await Promise.all(ordered.map(async (p) => {
-      const data = await window.cat.search(p, 8);
+      const data = await window.cat.search(p, 12);
       const sec = container.querySelector(`[data-pref="${cssEsc(p)}"] .card-row`);
       if (!sec) return;
-      sec.outerHTML = trackCardRow(data.results || []);
+      // Filter karaoke / instrumental clutter
+      const cleaned = (data.results || []).filter(t => {
+        const s = (t.title || '').toLowerCase();
+        return !s.includes('karaoke') && !s.includes('instrumental') && !s.includes('tribute');
+      }).slice(0, 8);
+      sec.outerHTML = trackCardRow(cleaned);
+      // Swap covers + artist info to iTunes (clean, watermark-free Apple Music art)
+      cleaned.forEach(t => swapToCleanCover(p, t));
     }));
   }
 
@@ -105,6 +112,35 @@ function trackCardRow(tracks) {
 
 function cardSkel() {
   return `<div class="card" style="opacity:0.3"><div class="card-cover"></div><h3>&nbsp;</h3><p>&nbsp;</p></div>`;
+}
+
+// Fetch clean iTunes cover for a track title + artist (no JioSaavn watermarks)
+const _coverCache = JSON.parse(sessionStorage.getItem('vs_itunes_covers') || '{}');
+async function swapToCleanCover(pref, track) {
+  const key = (track.title + '|' + (track.artist || '')).toLowerCase();
+  let url = _coverCache[key];
+  if (url === undefined) {
+    try {
+      const q = encodeURIComponent(`${track.title} ${track.artist || ''}`.trim());
+      const r = await fetch(`https://itunes.apple.com/search?term=${q}&entity=song&limit=1`);
+      const j = await r.json();
+      const art = j.results?.[0]?.artworkUrl100;
+      url = art ? art.replace('100x100bb.jpg', '600x600bb.jpg') : '';
+    } catch { url = ''; }
+    _coverCache[key] = url;
+    try { sessionStorage.setItem('vs_itunes_covers', JSON.stringify(_coverCache)); } catch {}
+  }
+  if (!url) return;
+  const cards = document.querySelectorAll(`[data-track-json]`);
+  cards.forEach(c => {
+    try {
+      const t = JSON.parse(c.getAttribute('data-track-json'));
+      if (t.id === track.id) {
+        const cover = c.querySelector('.card-cover');
+        if (cover) cover.style.backgroundImage = `url("${url}")`;
+      }
+    } catch {}
+  });
 }
 
 function bindCatalogTiles() {
