@@ -636,6 +636,97 @@ CURATED_ARTISTS = [
 ]
 
 
+def _prewarm_curated():
+    """Background fetch of all curated playlist + artist details so first
+    home load hits warm cache (instant covers)."""
+    import threading
+    def worker():
+        try:
+            sa = _spotapi()
+        except Exception as e:
+            print(f"[prewarm] spotapi import fail: {e}", flush=True)
+            return
+        for pid, name in CURATED_PLAYLISTS:
+            key = f"pl:{pid}"
+            if key in _sx_cache:
+                continue
+            try:
+                pl = sa.PublicPlaylist(pid)
+                info = pl.get_playlist_info(limit=100)
+                root = (info.get("data") or {}).get("playlistV2") or info or {}
+                items_raw = ((root.get("content") or {}).get("items")) or []
+                tracks = []
+                for i, it in enumerate(items_raw):
+                    t = (it.get("itemV2", {}).get("data") if isinstance(it.get("itemV2"), dict) else None) or it.get("track") or it
+                    tile = _sx_track_to_tile(t, i)
+                    if tile:
+                        tracks.append(tile)
+                owner_name = ""
+                ov2 = root.get("ownerV2")
+                if isinstance(ov2, dict) and isinstance(ov2.get("data"), dict):
+                    owner_name = ov2["data"].get("name") or ""
+                _sx_cache[key] = {
+                    "id": pid,
+                    "title": root.get("name") or name,
+                    "subtitle": (root.get("description") or "") if isinstance(root.get("description"), str) else "",
+                    "img": _sx_img(root),
+                    "owner": owner_name,
+                    "tracks": tracks,
+                }
+                print(f"[prewarm] cached playlist {pid} ({len(tracks)} tracks)", flush=True)
+            except Exception as e:
+                print(f"[prewarm] playlist {pid} fail: {e}", flush=True)
+        for aid, name in CURATED_ARTISTS:
+            key = f"ar:{aid}"
+            if key in _sx_cache:
+                continue
+            try:
+                ar = sa.Artist(aid)
+                info = ar.get_artist_info()
+                root = (info.get("data") or {}).get("artistUnion") or info or {}
+                profile = root.get("profile") or {}
+                visuals = root.get("visuals") or {}
+                stats = root.get("stats") or {}
+                disco = root.get("discography") or {}
+                top_raw = ((disco.get("topTracks") or {}).get("items")) or []
+                top = []
+                for i, it in enumerate(top_raw):
+                    t = (it.get("track") if isinstance(it.get("track"), dict) else None) or it
+                    tile = _sx_track_to_tile(t, i)
+                    if tile:
+                        top.append(tile)
+                albums_raw = ((disco.get("albums") or {}).get("items")) or []
+                albums = []
+                for a in albums_raw:
+                    rel = (a.get("releases") or {}).get("items") or [a]
+                    for r in rel[:1]:
+                        albums.append({
+                            "id": (r.get("uri") or "").split(":")[-1],
+                            "title": r.get("name") or "",
+                            "subtitle": str((r.get("date") or {}).get("year") or "")[:4] or "Album",
+                            "img": _sx_img(r.get("coverArt") or {}),
+                            "type": "sx-album",
+                        })
+                _sx_cache[key] = {
+                    "id": aid,
+                    "name": profile.get("name") or name,
+                    "img": _sx_img(visuals.get("avatarImage") or visuals.get("headerImage") or {}),
+                    "bio": (profile.get("biography") or {}).get("text") if isinstance(profile.get("biography"), dict) else "",
+                    "follower_count": int(stats.get("followers") or 0),
+                    "genres": [],
+                    "top_songs": top,
+                    "albums": albums,
+                }
+                print(f"[prewarm] cached artist {aid} ({len(top)} top, {len(albums)} albums)", flush=True)
+            except Exception as e:
+                print(f"[prewarm] artist {aid} fail: {e}", flush=True)
+    threading.Thread(target=worker, daemon=True).start()
+
+
+# Kick prewarm on import (Gunicorn worker boot).
+_prewarm_curated()
+
+
 @app.route("/api/sx-home")
 def sx_home():
     """Returns curated tile list (Spotify IDs). Frontend fetches details on click."""

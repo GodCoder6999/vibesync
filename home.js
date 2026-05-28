@@ -75,22 +75,22 @@ async function doRender() {
   bindLogout();
 }
 
-// Lazy-fetch RapidAPI covers for tiles that don't have an image yet.
+// Parallel lazy-fetch of Spotify covers. All requests in flight at once.
+// Server caches each id in memory, so re-loads of home page hit cache.
 async function loadSxCovers() {
-  const tiles = document.querySelectorAll('[data-sx-cover]');
-  for (const el of tiles) {
+  const tiles = [...document.querySelectorAll('[data-sx-cover]')];
+  await Promise.all(tiles.map(async (el) => {
     try {
       const ref = JSON.parse(el.getAttribute('data-sx-cover'));
-      if (!ref.id) continue;
+      if (!ref.id) return;
       let d;
       if (ref.type === 'playlist') d = await window.cat.sxPlaylist(ref.id);
       else if (ref.type === 'artist')   d = await window.cat.sxArtist(ref.id);
       else if (ref.type === 'album')    d = await window.cat.sxAlbum(ref.id);
       const img = d?.img;
       if (img) el.style.backgroundImage = `url("${img}")`;
-    } catch (e) { /* quota or 404, skip */ }
-    await new Promise(r => setTimeout(r, 60));
-  }
+    } catch (e) { /* skip on failure */ }
+  }));
 }
 
 function sectionHTML(title, items, kind) {
