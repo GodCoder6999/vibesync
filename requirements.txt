@@ -4,3 +4,6 @@ gunicorn>=21.0
 spotapi
 requests
 curl_cffi
+pymongo
+pyotp
+tls-client
