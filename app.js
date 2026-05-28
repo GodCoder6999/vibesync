@@ -172,7 +172,7 @@ document.addEventListener('click', (e) => {
     const title = sbItem.querySelector('strong')?.textContent || '';
     if (title === 'Liked Songs') { location.href = 'library.html'; return; }
     if (sbItem.classList.contains('artist')) {
-      location.href = 'artist.html?name=' + encodeURIComponent(title);
+      location.href = 'artist.html?name=' + encodeURIComponent(title) + '&src=sx';
     } else {
       location.href = 'explore.html?q=' + encodeURIComponent(title);
     }

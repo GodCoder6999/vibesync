@@ -262,246 +262,274 @@ def lyrics():
         return jsonify(error=str(e), plain="", synced=""), 500
 
 
-# ---------- Spotify via RapidAPI (SpotScraper) ----------
-RAPIDAPI_KEY = os.environ.get("RAPIDAPI_KEY", "")
-RAPIDAPI_HOST = "spotscraper-updated-spotify-scraper.p.rapidapi.com"
+# ---------- Spotify via SpotAPI (unofficial scraper) ----------
+# All metadata + covers come from real Spotify catalog. Audio still JioSaavn.
+# SpotAPI scrapes Spotify's public web endpoints; may rate-limit on cloud IPs.
 
-# In-memory cache for RapidAPI responses (id -> normalized dict). Saves quota.
-_rx_cache = {}
-
-
-def rx_get(path: str) -> dict:
-    if not RAPIDAPI_KEY:
-        raise RuntimeError("RAPIDAPI_KEY env var not set")
-    return fetch_json(
-        f"https://{RAPIDAPI_HOST}{path}",
-        headers={
-            "x-rapidapi-key": RAPIDAPI_KEY,
-            "x-rapidapi-host": RAPIDAPI_HOST,
-        },
-        timeout=20,
-    )
+_sx_cache = {}  # id -> normalized dict (cuts duplicate scrapes)
 
 
-def _img(obj: dict) -> str:
+def _sx_img(obj) -> str:
+    """Extract image URL from messy SpotAPI shapes."""
     if not obj:
         return ""
-    if isinstance(obj.get("images"), list) and obj["images"]:
-        first = obj["images"][0]
-        if isinstance(first, dict):
-            return first.get("url") or first.get("uri") or ""
-        if isinstance(first, str):
-            return first
-    for k in ("image", "cover", "coverArt", "thumbnail", "img"):
-        v = obj.get(k)
-        if isinstance(v, str) and v:
-            return v
-        if isinstance(v, dict):
-            u = v.get("url") or (v.get("sources", [{}])[0].get("url") if isinstance(v.get("sources"), list) else "")
-            if u:
-                return u
+    if isinstance(obj, str):
+        return obj
+    if isinstance(obj, dict):
+        for k in ("url", "uri"):
+            if isinstance(obj.get(k), str):
+                return obj[k]
+        if isinstance(obj.get("images"), list) and obj["images"]:
+            return _sx_img(obj["images"][0])
+        for k in ("image", "cover", "coverArt", "thumbnail", "img", "picture"):
+            v = obj.get(k)
+            if v:
+                got = _sx_img(v)
+                if got:
+                    return got
+        if isinstance(obj.get("sources"), list) and obj["sources"]:
+            return _sx_img(obj["sources"][0])
+    if isinstance(obj, list) and obj:
+        return _sx_img(obj[0])
     return ""
 
 
-def _artists_str(arr) -> str:
-    if not isinstance(arr, list):
-        return ""
+def _sx_artists(obj) -> str:
+    """Join artist names from any plausible field."""
+    arr = obj.get("artists") if isinstance(obj, dict) else None
+    if arr is None and isinstance(obj, dict):
+        arr = (obj.get("artist") if isinstance(obj.get("artist"), list) else None)
     out = []
-    for a in arr:
-        if isinstance(a, dict):
-            out.append(a.get("name") or a.get("title") or "")
-        elif isinstance(a, str):
-            out.append(a)
+    if isinstance(arr, list):
+        for a in arr:
+            if isinstance(a, dict):
+                n = a.get("name") or a.get("profile", {}).get("name") if isinstance(a.get("profile"), dict) else a.get("name")
+                if n:
+                    out.append(n)
+            elif isinstance(a, str):
+                out.append(a)
+    elif isinstance(arr, str):
+        out.append(arr)
     return ", ".join(x for x in out if x)
 
 
-def _rx_track_to_tile(t: dict, idx: int = 0) -> dict:
-    """Normalize a RapidAPI track item to our internal tile (no audio yet)."""
+def _sx_track_to_tile(t: dict, idx: int = 0) -> dict:
     if not isinstance(t, dict):
         return None
+    if "track" in t and isinstance(t["track"], dict):
+        t = t["track"]
     name = t.get("name") or t.get("title") or ""
-    artists = _artists_str(t.get("artists") or t.get("artist"))
-    if not artists and isinstance(t.get("artist"), str):
-        artists = t["artist"]
-    album = t.get("album") or {}
-    if isinstance(album, dict):
-        album_img = _img(album) or _img(t)
-        album_name = album.get("name") or album.get("title") or ""
-    else:
-        album_img = _img(t)
-        album_name = str(album)
-    duration_ms = t.get("duration_ms") or t.get("durationMs") or 0
-    if not duration_ms and t.get("duration"):
-        d = t["duration"]
-        duration_ms = d * 1000 if isinstance(d, (int, float)) and d < 1000 else int(d)
+    if not name:
+        return None
+    artists = _sx_artists(t)
+    album = t.get("album") if isinstance(t.get("album"), dict) else {}
+    album_name = album.get("name") or album.get("title") or ""
+    album_img = _sx_img(album) or _sx_img(t)
+    dur = t.get("duration_ms") or t.get("durationMs") or 0
+    if not dur and t.get("duration"):
+        v = t["duration"]
+        dur = int(v) if isinstance(v, (int, float)) and v >= 1000 else int(v) * 1000
+    tid = t.get("id") or ""
+    if not tid:
+        uri = t.get("uri") or ""
+        tid = uri.split(":")[-1] if uri else ""
     return {
-        "id": t.get("id") or t.get("uri", "").split(":")[-1] or "",
+        "id": tid,
         "title": name,
         "artist": artists,
         "album": album_name,
         "img": album_img,
-        "duration": int(duration_ms) // 1000 if duration_ms else 0,
-        # Frontend uses this to fetch JioSaavn audio on click
+        "duration": int(dur) // 1000 if dur else 0,
         "query": f"{name} {artists}".strip(),
         "source": "Spotify",
     }
 
 
-@app.route("/api/rx-playlist")
-def rx_playlist():
+def _spotapi():
+    """Lazy import — keeps boot fast and lets server start even if SpotAPI fails."""
+    import importlib
+    return importlib.import_module("spotapi")
+
+
+@app.route("/api/sx-health")
+def sx_health():
+    try:
+        sa = _spotapi()
+        return jsonify(ok=True, version=getattr(sa, "__version__", "unknown"))
+    except Exception as e:
+        return jsonify(ok=False, error=str(e)), 500
+
+
+@app.route("/api/sx-search")
+def sx_search():
+    q = (request.args.get("q") or "").strip()
+    if not q:
+        return jsonify(error="missing q"), 400
+    limit = int(request.args.get("limit", 10))
+    try:
+        sa = _spotapi()
+        song = sa.Song()
+        data = song.query_songs(q, limit=limit)
+        items = data.get("data", {}).get("searchV2", {}).get("tracksV2", {}).get("items", []) if isinstance(data, dict) else []
+        if not items:
+            items = data.get("tracks", []) if isinstance(data, dict) else []
+        tracks = []
+        for i, it in enumerate(items[:limit]):
+            t = it.get("item", {}).get("data") if isinstance(it.get("item"), dict) else it
+            tile = _sx_track_to_tile(t, i)
+            if tile:
+                tracks.append(tile)
+        return jsonify(tracks=tracks)
+    except Exception as e:
+        return jsonify(error=str(e), tracks=[]), 500
+
+
+@app.route("/api/sx-playlist")
+def sx_playlist():
     pid = (request.args.get("id") or "").strip()
     if not pid:
         return jsonify(error="missing id"), 400
-    cache_key = f"pl:{pid}"
-    if cache_key in _rx_cache:
-        return jsonify(_rx_cache[cache_key])
+    if pid in _sx_cache:
+        return jsonify(_sx_cache[pid])
     try:
-        meta = rx_get(f"/playlists/{pid}")
-        try:
-            tdata = rx_get(f"/playlists/{pid}/tracks")
-        except Exception:
-            tdata = {}
-        raw_tracks = (
-            tdata.get("tracks") or tdata.get("items") or tdata.get("data")
-            or meta.get("tracks") or []
-        )
-        if isinstance(raw_tracks, dict):
-            raw_tracks = raw_tracks.get("items") or raw_tracks.get("data") or []
-        # Unwrap {track:{...}} shape
-        normalized = []
-        for i, t in enumerate(raw_tracks):
-            if isinstance(t, dict) and "track" in t and isinstance(t["track"], dict):
-                t = t["track"]
-            tile = _rx_track_to_tile(t, i)
-            if tile and tile["title"]:
-                normalized.append(tile)
+        sa = _spotapi()
+        pl = sa.PublicPlaylist(pid) if hasattr(sa, "PublicPlaylist") else sa.Playlist(pid)
+        info = pl.get_playlist_info(limit=100) if hasattr(pl, "get_playlist_info") else pl.get_info()
+        # SpotAPI returns nested GraphQL shape
+        root = info.get("data", {}).get("playlistV2") if isinstance(info, dict) else None
+        if not root:
+            root = info if isinstance(info, dict) else {}
+        items_raw = (((root.get("content") or {}).get("items")) or root.get("tracks") or root.get("items") or [])
+        if isinstance(items_raw, dict):
+            items_raw = items_raw.get("items") or []
+        tracks = []
+        for i, it in enumerate(items_raw):
+            t = (it.get("itemV2", {}).get("data") if isinstance(it.get("itemV2"), dict) else None) or it.get("track") or it
+            tile = _sx_track_to_tile(t, i)
+            if tile:
+                tracks.append(tile)
         out = {
-            "id": meta.get("id") or pid,
-            "title": meta.get("name") or meta.get("title") or "",
-            "subtitle": meta.get("description") or "",
-            "img": _img(meta),
-            "owner": (meta.get("owner") or {}).get("display_name", "") if isinstance(meta.get("owner"), dict) else "",
-            "tracks": normalized,
+            "id": pid,
+            "title": root.get("name") or root.get("title") or "",
+            "subtitle": (root.get("description") or "") if isinstance(root.get("description"), str) else "",
+            "img": _sx_img(root.get("images") or root.get("image") or root.get("coverArt") or {}),
+            "owner": ((root.get("owner") or {}).get("name") if isinstance(root.get("owner"), dict) else "") or "",
+            "tracks": tracks,
         }
-        _rx_cache[cache_key] = out
+        _sx_cache[pid] = out
         return jsonify(out)
     except Exception as e:
         return jsonify(error=str(e), tracks=[]), 500
 
 
-@app.route("/api/rx-album")
-def rx_album():
+@app.route("/api/sx-album")
+def sx_album():
     aid = (request.args.get("id") or "").strip()
     if not aid:
         return jsonify(error="missing id"), 400
-    cache_key = f"al:{aid}"
-    if cache_key in _rx_cache:
-        return jsonify(_rx_cache[cache_key])
+    if aid in _sx_cache:
+        return jsonify(_sx_cache[aid])
     try:
-        d = rx_get(f"/albums/{aid}")
-        raw = d.get("tracks") or d.get("items") or []
-        if isinstance(raw, dict):
-            raw = raw.get("items") or raw.get("data") or []
-        normalized = []
-        for i, t in enumerate(raw):
-            if isinstance(t, dict) and "track" in t and isinstance(t["track"], dict):
-                t = t["track"]
-            tile = _rx_track_to_tile(t, i)
-            if tile and tile["title"]:
-                # Album tracks may not embed album.image; inject parent
+        sa = _spotapi()
+        alb = sa.Album(aid)
+        info = alb.get_album_info() if hasattr(alb, "get_album_info") else alb.get_info()
+        root = info.get("data", {}).get("albumUnion") if isinstance(info, dict) else None
+        if not root:
+            root = info if isinstance(info, dict) else {}
+        tracks_raw = (((root.get("tracksV2") or root.get("tracks") or {}).get("items")) or root.get("items") or [])
+        tracks = []
+        for i, it in enumerate(tracks_raw):
+            t = (it.get("track") if isinstance(it.get("track"), dict) else None) or it.get("itemV2", {}).get("data") or it
+            tile = _sx_track_to_tile(t, i)
+            if tile:
                 if not tile["img"]:
-                    tile["img"] = _img(d)
+                    tile["img"] = _sx_img(root.get("coverArt") or root.get("images") or root.get("image") or {})
                 if not tile["album"]:
-                    tile["album"] = d.get("name") or d.get("title") or ""
-                normalized.append(tile)
+                    tile["album"] = root.get("name") or root.get("title") or ""
+                tracks.append(tile)
         out = {
-            "id": d.get("id") or aid,
-            "title": d.get("name") or d.get("title") or "",
-            "subtitle": _artists_str(d.get("artists")),
-            "img": _img(d),
-            "year": (d.get("release_date") or d.get("releaseDate") or "")[:4],
-            "tracks": normalized,
+            "id": aid,
+            "title": root.get("name") or root.get("title") or "",
+            "subtitle": _sx_artists(root),
+            "img": _sx_img(root.get("coverArt") or root.get("images") or root.get("image") or {}),
+            "year": str(root.get("date", {}).get("year") if isinstance(root.get("date"), dict) else root.get("releaseDate", "") or "")[:4],
+            "tracks": tracks,
         }
-        _rx_cache[cache_key] = out
+        _sx_cache[aid] = out
         return jsonify(out)
     except Exception as e:
         return jsonify(error=str(e), tracks=[]), 500
 
 
-@app.route("/api/rx-artist")
-def rx_artist():
+@app.route("/api/sx-artist")
+def sx_artist():
     aid = (request.args.get("id") or "").strip()
-    if not aid:
-        return jsonify(error="missing id"), 400
-    cache_key = f"ar:{aid}"
-    if cache_key in _rx_cache:
-        return jsonify(_rx_cache[cache_key])
+    name = (request.args.get("name") or "").strip()
+    if not aid and not name:
+        return jsonify(error="need id or name"), 400
+    key = aid or f"name:{name}"
+    if key in _sx_cache:
+        return jsonify(_sx_cache[key])
     try:
-        d = rx_get(f"/artists/{aid}")
-        try:
-            disco = rx_get(f"/artists/{aid}/discography")
-        except Exception:
-            disco = {}
-        albums_raw = disco.get("albums") or disco.get("items") or disco.get("data") or []
-        if isinstance(albums_raw, dict):
-            albums_raw = albums_raw.get("items") or []
+        sa = _spotapi()
+        if not aid and name:
+            song = sa.Song()
+            data = song.query_artists(name, limit=1) if hasattr(song, "query_artists") else song.query_songs(name, limit=1)
+            # Try to extract first artist id
+            try:
+                items = data["data"]["searchV2"]["artists"]["items"]
+                aid = items[0]["data"]["uri"].split(":")[-1]
+            except Exception:
+                pass
+            if not aid:
+                return jsonify(error="not found"), 404
+        ar = sa.Artist(aid)
+        info = ar.get_artist_info() if hasattr(ar, "get_artist_info") else ar.get_info()
+        root = info.get("data", {}).get("artistUnion") if isinstance(info, dict) else None
+        if not root:
+            root = info if isinstance(info, dict) else {}
+        profile = root.get("profile") or {}
+        visuals = root.get("visuals") or {}
+        stats = root.get("stats") or {}
+        # Top tracks
+        top_raw = (((root.get("discography") or {}).get("topTracks") or {}).get("items")) or root.get("topTracks") or []
+        top = []
+        for i, it in enumerate(top_raw):
+            t = (it.get("track") if isinstance(it.get("track"), dict) else None) or it
+            tile = _sx_track_to_tile(t, i)
+            if tile:
+                top.append(tile)
+        # Albums
+        disco = (root.get("discography") or {})
+        albums_raw = ((disco.get("albums") or {}).get("items")) or []
         albums = []
         for a in albums_raw:
-            if not isinstance(a, dict):
-                continue
-            albums.append({
-                "id": a.get("id") or "",
-                "title": a.get("name") or a.get("title") or "",
-                "subtitle": (a.get("release_date") or "")[:4] or "Album",
-                "img": _img(a),
-                "type": "rx-album",
-            })
-        # Top tracks may live in artist payload or need different endpoint
-        top_raw = d.get("top_tracks") or d.get("topTracks") or d.get("topSongs") or []
-        if isinstance(top_raw, dict):
-            top_raw = top_raw.get("items") or []
-        top = []
-        for i, t in enumerate(top_raw):
-            if isinstance(t, dict) and "track" in t:
-                t = t["track"]
-            tile = _rx_track_to_tile(t, i)
-            if tile and tile["title"]:
-                top.append(tile)
+            rel = (a.get("releases") or {}).get("items") or [a]
+            for r in rel[:1]:
+                albums.append({
+                    "id": (r.get("uri") or "").split(":")[-1],
+                    "title": r.get("name") or "",
+                    "subtitle": str((r.get("date") or {}).get("year") or "")[:4] or "Album",
+                    "img": _sx_img(r.get("coverArt") or {}),
+                    "type": "sx-album",
+                })
         out = {
-            "id": d.get("id") or aid,
-            "name": d.get("name") or d.get("title") or "",
-            "img": _img(d),
-            "bio": d.get("bio") or d.get("biography") or "",
-            "follower_count": (d.get("followers") or {}).get("total", 0) if isinstance(d.get("followers"), dict) else (d.get("follower_count") or 0),
-            "genres": d.get("genres") or [],
+            "id": aid,
+            "name": profile.get("name") or name or "",
+            "img": _sx_img(visuals.get("avatarImage") or visuals.get("headerImage") or root.get("images") or {}),
+            "bio": (profile.get("biography") or {}).get("text") if isinstance(profile.get("biography"), dict) else "",
+            "follower_count": int(stats.get("followers") or 0),
+            "genres": [],
             "top_songs": top,
             "albums": albums,
         }
-        _rx_cache[cache_key] = out
+        _sx_cache[key] = out
         return jsonify(out)
     except Exception as e:
         return jsonify(error=str(e), top_songs=[], albums=[]), 500
 
 
-@app.route("/api/rx-track")
-def rx_track():
-    tid = (request.args.get("id") or "").strip()
-    if not tid:
-        return jsonify(error="missing id"), 400
-    cache_key = f"tr:{tid}"
-    if cache_key in _rx_cache:
-        return jsonify(_rx_cache[cache_key])
-    try:
-        d = rx_get(f"/tracks/{tid}")
-        tile = _rx_track_to_tile(d, 0)
-        _rx_cache[cache_key] = tile
-        return jsonify(tile)
-    except Exception as e:
-        return jsonify(error=str(e)), 500
-
-
-# Curated Spotify catalogue for the home page (no /home or /search endpoint
-# in the RapidAPI plan, so we hand-pick recognisable IDs).
+# Curated Spotify catalogue for the home page.
 CURATED_PLAYLISTS = [
     ("37i9dQZF1DXcBWIGoYBM5M", "Today's Top Hits"),
     ("37i9dQZF1DX0XUsuxWHRQd", "RapCaviar"),
@@ -528,19 +556,18 @@ CURATED_ARTISTS = [
 ]
 
 
-@app.route("/api/rx-home")
-def rx_home():
-    """Returns curated tiles. Each tile only has id/title — frontend fetches
-    full data + cover on detail page. Saves RapidAPI quota."""
+@app.route("/api/sx-home")
+def sx_home():
+    """Returns curated tile list (Spotify IDs). Frontend fetches details on click."""
     return jsonify(
         playlists=[
             {"id": pid, "title": name, "subtitle": "Playlist",
-             "img": "", "type": "rx-playlist", "query": name}
+             "img": "", "type": "sx-playlist", "query": name}
             for pid, name in CURATED_PLAYLISTS
         ],
         artists=[
             {"id": aid, "title": name, "subtitle": "Artist",
-             "img": "", "type": "rx-artist", "query": name}
+             "img": "", "type": "sx-artist", "query": name}
             for aid, name in CURATED_ARTISTS
         ],
     )

@@ -23,7 +23,7 @@ async function doRender() {
   if (ua) ua.textContent = (user.name || 'U')[0].toUpperCase();
 
   // ---- Spotify curated home (real Spotify metadata via RapidAPI) ----
-  const rx = await window.cat.rxHome().catch(e => { console.warn('rx home fail', e); return {}; });
+  const rx = await window.cat.sxHome().catch(e => { console.warn('rx home fail', e); return {}; });
   const playlists = rx.playlists || [];
   const artists = rx.artists || [];
 
@@ -31,7 +31,7 @@ async function doRender() {
   const quick = playlists.slice(0, 6);
   document.getElementById('quickPicks').innerHTML = quick.map(t => `
     <button class="qp-tile" data-cat-tile='${escAttr(JSON.stringify(t))}'>
-      <div class="qp-cover" data-rx-cover='${escAttr(JSON.stringify({type:'playlist', id:t.id}))}' ${t.img ? `style="background-image:url(&quot;${t.img}&quot;)"` : ''}></div>
+      <div class="qp-cover" data-sx-cover='${escAttr(JSON.stringify({type:'playlist', id:t.id}))}' ${t.img ? `style="background-image:url(&quot;${t.img}&quot;)"` : ''}></div>
       <strong>${esc(t.title)}</strong>
       <div class="qp-fab"><svg width="20" height="20" viewBox="0 0 16 16" fill="currentColor"><path d="M3 1.713a.7.7 0 0 1 1.05-.607l10.89 6.288a.7.7 0 0 1 0 1.212L4.05 14.894A.7.7 0 0 1 3 14.288V1.713z"/></svg></div>
     </button>`).join('');
@@ -45,7 +45,7 @@ async function doRender() {
   container.innerHTML = sections.map(sec => sectionHTML(sec.title, sec.items.slice(0, 8), sec.kind)).join('');
 
   // Lazy-load covers from RapidAPI (one request per tile, cached)
-  loadRxCovers();
+  loadSxCovers();
 
   // ---- User-pref mix rows (JioSaavn fallback for taste-based recs) ----
   const userArtists = full?.artists || [];
@@ -76,16 +76,16 @@ async function doRender() {
 }
 
 // Lazy-fetch RapidAPI covers for tiles that don't have an image yet.
-async function loadRxCovers() {
-  const tiles = document.querySelectorAll('[data-rx-cover]');
+async function loadSxCovers() {
+  const tiles = document.querySelectorAll('[data-sx-cover]');
   for (const el of tiles) {
     try {
-      const ref = JSON.parse(el.getAttribute('data-rx-cover'));
+      const ref = JSON.parse(el.getAttribute('data-sx-cover'));
       if (!ref.id) continue;
       let d;
-      if (ref.type === 'playlist') d = await window.cat.rxPlaylist(ref.id);
-      else if (ref.type === 'artist')   d = await window.cat.rxArtist(ref.id);
-      else if (ref.type === 'album')    d = await window.cat.rxAlbum(ref.id);
+      if (ref.type === 'playlist') d = await window.cat.sxPlaylist(ref.id);
+      else if (ref.type === 'artist')   d = await window.cat.sxArtist(ref.id);
+      else if (ref.type === 'album')    d = await window.cat.sxAlbum(ref.id);
       const img = d?.img;
       if (img) el.style.backgroundImage = `url("${img}")`;
     } catch (e) { /* quota or 404, skip */ }
@@ -96,13 +96,13 @@ async function loadRxCovers() {
 function sectionHTML(title, items, kind) {
   if (!items.length) return '';
   // kind = 'playlist' | 'artist' | 'album' — sets RapidAPI cover hint type
-  const rxType = kind === 'artist' ? 'artist' : (kind === 'album' ? 'album' : 'playlist');
+  const sxType = kind === 'artist' ? 'artist' : (kind === 'album' ? 'album' : 'playlist');
   return `<section class="section">
     <div class="section-head"><h2>${esc(title)}</h2><a href="explore.html">Show all</a></div>
     <div class="card-row">
       ${items.map(it => `
         <button class="card${kind === 'artist' ? ' artist' : ''}" data-cat-tile='${escAttr(JSON.stringify(it))}'>
-          <div class="card-cover" data-rx-cover='${escAttr(JSON.stringify({type: rxType, id: it.id}))}' ${it.img ? `style="background-image:url(&quot;${it.img}&quot;)"` : ''}></div>
+          <div class="card-cover" data-sx-cover='${escAttr(JSON.stringify({type: sxType, id: it.id}))}' ${it.img ? `style="background-image:url(&quot;${it.img}&quot;)"` : ''}></div>
           <h3>${esc(it.title)}</h3>
           <p>${esc(it.subtitle || '')}</p>
           <div class="card-fab"><svg viewBox="0 0 16 16" fill="currentColor"><path d="M3 1.713a.7.7 0 0 1 1.05-.607l10.89 6.288a.7.7 0 0 1 0 1.212L4.05 14.894A.7.7 0 0 1 3 14.288V1.713z"/></svg></div>
@@ -191,30 +191,30 @@ function bindCatalogTiles() {
     const isFab = e.target.closest('.card-fab, .qp-fab');
 
     // Spotify-curated tiles (RapidAPI)
-    if (item.id && item.type === 'rx-playlist') {
+    if (item.id && item.type === 'sx-playlist') {
       if (isFab) {
-        const p = await window.cat.rxPlaylist(item.id);
+        const p = await window.cat.sxPlaylist(item.id);
         if (p.tracks?.length) window.vsSetQueue(p.tracks, 0);
       } else {
-        location.href = `playlist.html?id=${encodeURIComponent(item.id)}&src=rx`;
+        location.href = `playlist.html?id=${encodeURIComponent(item.id)}&src=sx`;
       }
       return;
     }
-    if (item.id && item.type === 'rx-artist') {
+    if (item.id && item.type === 'sx-artist') {
       if (isFab) {
-        const a = await window.cat.rxArtist(item.id);
+        const a = await window.cat.sxArtist(item.id);
         if (a.top_songs?.length) window.vsSetQueue(a.top_songs, 0);
       } else {
-        location.href = `artist.html?id=${encodeURIComponent(item.id)}&src=rx`;
+        location.href = `artist.html?id=${encodeURIComponent(item.id)}&src=sx`;
       }
       return;
     }
-    if (item.id && item.type === 'rx-album') {
+    if (item.id && item.type === 'sx-album') {
       if (isFab) {
-        const a = await window.cat.rxAlbum(item.id);
+        const a = await window.cat.sxAlbum(item.id);
         if (a.tracks?.length) window.vsSetQueue(a.tracks, 0);
       } else {
-        location.href = `album.html?id=${encodeURIComponent(item.id)}&src=rx`;
+        location.href = `album.html?id=${encodeURIComponent(item.id)}&src=sx`;
       }
       return;
     }

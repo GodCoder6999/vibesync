@@ -25,12 +25,16 @@ window.cat = {
   lyrics:   (title, artist) =>
     _fetch(`/api/lyrics?title=${encodeURIComponent(title)}&artist=${encodeURIComponent(artist)}`),
 
-  // Spotify catalog via RapidAPI (real Spotify IDs + metadata)
-  rxHome:     () => _fetch('/api/rx-home'),
-  rxPlaylist: (id) => _fetch(`/api/rx-playlist?id=${encodeURIComponent(id)}`),
-  rxAlbum:    (id) => _fetch(`/api/rx-album?id=${encodeURIComponent(id)}`),
-  rxArtist:   (id) => _fetch(`/api/rx-artist?id=${encodeURIComponent(id)}`),
-  rxTrack:    (id) => _fetch(`/api/rx-track?id=${encodeURIComponent(id)}`),
+  // Spotify catalog via SpotAPI (real Spotify IDs + metadata, scraped)
+  sxHome:     () => _fetch('/api/sx-home'),
+  sxSearch:   (q, limit = 10) => _fetch(`/api/sx-search?q=${encodeURIComponent(q)}&limit=${limit}`),
+  sxPlaylist: (id) => _fetch(`/api/sx-playlist?id=${encodeURIComponent(id)}`),
+  sxAlbum:    (id) => _fetch(`/api/sx-album?id=${encodeURIComponent(id)}`),
+  sxArtist:   (opts) => {
+    const qs = typeof opts === 'string' ? `id=${encodeURIComponent(opts)}` :
+      (opts.id ? `id=${encodeURIComponent(opts.id)}` : `name=${encodeURIComponent(opts.name)}`);
+    return _fetch(`/api/sx-artist?${qs}`);
+  },
 };
 
 // Match a Spotify track (no stream URL) to a JioSaavn audio source.

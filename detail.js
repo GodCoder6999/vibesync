@@ -15,17 +15,17 @@ async function renderDetail(type) {
   const id = params.get('id');
   const name = params.get('name');
   const cover = params.get('cover') || '';
-  const src = params.get('src'); // 'rx' = Spotify via RapidAPI, else JioSaavn
+  const src = params.get('src'); // 'sx' = Spotify via SpotAPI scraper, else JioSaavn
 
   const content = document.getElementById('content');
   content.innerHTML = `<div style="padding:80px 24px;color:var(--text-muted)">Loading…</div>`;
 
   try {
     let data;
-    if (src === 'rx') {
-      if (type === 'playlist') data = await window.cat.rxPlaylist(id);
-      else if (type === 'album') data = await window.cat.rxAlbum(id);
-      else if (type === 'artist') data = await window.cat.rxArtist(id);
+    if (src === 'sx' || src === 'rx') {
+      if (type === 'playlist') data = await window.cat.sxPlaylist(id);
+      else if (type === 'album') data = await window.cat.sxAlbum(id);
+      else if (type === 'artist') data = await window.cat.sxArtist(id ? { id } : { name });
     } else {
       if (type === 'playlist') data = await window.cat.playlist(id);
       else if (type === 'album') data = await window.cat.album(id);
@@ -145,7 +145,7 @@ async function renderArtist(content, data) {
       <div class="section-head"><h2>Discography</h2><a href="#">Show all</a></div>
       <div class="card-row">
         ${albums.map(a => `
-          <a class="card" href="album.html?id=${encodeURIComponent(a.id)}${a.type === 'rx-album' ? '&src=rx' : ''}">
+          <a class="card" href="album.html?id=${encodeURIComponent(a.id)}${a.type === 'sx-album' ? '&src=sx' : ''}">
             <div class="card-cover" ${a.img ? `style="background-image:url(&quot;${a.img}&quot;)"` : ''}></div>
             <h3>${esc(a.title)}</h3>
             <p>${esc(a.subtitle || 'Album')}</p>
