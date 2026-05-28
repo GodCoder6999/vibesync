@@ -5,7 +5,8 @@
 // 2) Audius (fallback) — indie/electronic full tracks.
 // 3) iTunes (last-resort fallback) — 30s previews of any mainstream song.
 
-const PROXY  = '/api/search';
+const API_BASE = (window.VS_CONFIG && window.VS_CONFIG.API_BASE) || '';
+const PROXY  = API_BASE + '/api/search';
 const ITUNES = 'https://itunes.apple.com/search';
 const AUDIUS = 'https://discoveryprovider.audius.co/v1';
 const APP_NAME = 'VibeSync';
@@ -107,7 +108,7 @@ async function loadLyricsFor(track) {
   if (!box) return;
   box.textContent = 'Loading lyrics…';
   try {
-    const r = await fetch('/api/lyrics?title=' + encodeURIComponent(track.title) + '&artist=' + encodeURIComponent(track.artist || ''));
+    const r = await fetch(API_BASE + '/api/lyrics?title=' + encodeURIComponent(track.title) + '&artist=' + encodeURIComponent(track.artist || ''));
     const d = await r.json();
     if (d.instrumental) box.textContent = '♪ Instrumental';
     else if (d.plain) box.textContent = d.plain;
@@ -348,6 +349,7 @@ window.vsAudio = audio;
 window.searchAndPlay = searchAndPlay;
 window.updateNowPlaying = updateNowPlaying;
 window.playTrack = playTrack;
+window.loadLyricsFor = loadLyricsFor;
 
 if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', init);

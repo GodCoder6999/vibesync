@@ -3,10 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>VibeSync — Home</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<title>Spotify – Web Player</title>
+<link rel="icon" href="https://www.scdn.co/i/_global/favicon.png">
 <link rel="stylesheet" href="styles.css">
 <script>
 if (!localStorage.getItem('vs_user') || !localStorage.getItem('vs_prefs')) {
@@ -17,59 +15,49 @@ if (!localStorage.getItem('vs_user') || !localStorage.getItem('vs_prefs')) {
 <body>
 <div class="app">
   <div id="chrome-sidebar"></div>
+
   <main class="main">
     <header class="topbar">
-      <div class="nav-arrows">
-        <button class="icon-btn" aria-label="Back"><svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M11.03.47a.75.75 0 0 1 0 1.06L4.56 8l6.47 6.47a.75.75 0 1 1-1.06 1.06L2.44 8 9.97.47a.75.75 0 0 1 1.06 0z"/></svg></button>
-        <button class="icon-btn" aria-label="Forward"><svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M4.97.47a.75.75 0 0 0 0 1.06L11.44 8l-6.47 6.47a.75.75 0 1 0 1.06 1.06L13.56 8 6.03.47a.75.75 0 0 0-1.06 0z"/></svg></button>
+      <div class="tb-arrows">
+        <button class="arrow" aria-label="Back"><svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M11.03.47a.75.75 0 0 1 0 1.06L4.56 8l6.47 6.47a.75.75 0 1 1-1.06 1.06L2.44 8 9.97.47a.75.75 0 0 1 1.06 0z"/></svg></button>
+        <button class="arrow" aria-label="Forward"><svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M4.97.47a.75.75 0 0 0 0 1.06L11.44 8l-6.47 6.47a.75.75 0 1 0 1.06 1.06L13.56 8 6.03.47a.75.75 0 0 0-1.06 0z"/></svg></button>
       </div>
-      <div class="search-wrap">
-        <div class="search">
-          <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M7 1.75a5.25 5.25 0 1 0 0 10.5 5.25 5.25 0 0 0 0-10.5zM.25 7a6.75 6.75 0 1 1 12.096 4.12l3.184 3.185a.75.75 0 1 1-1.06 1.06L11.304 12.2A6.75 6.75 0 0 1 .25 7z"/></svg>
+      <div class="tb-search-wrap">
+        <div class="tb-search">
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M10.533 1.279c-5.18 0-9.407 4.14-9.407 9.279s4.226 9.279 9.407 9.279c2.234 0 4.29-.77 5.907-2.058l4.353 4.353a1 1 0 1 0 1.414-1.414l-4.344-4.344a9.157 9.157 0 0 0 2.077-5.816c0-5.14-4.226-9.28-9.407-9.28zm-7.407 9.279c0-4.006 3.302-7.28 7.407-7.28s7.407 3.274 7.407 7.28-3.302 7.279-7.407 7.279-7.407-3.273-7.407-7.28z"/></svg>
           <input placeholder="What do you want to play?" data-search-input>
+          <div class="tb-search-divider"></div>
+          <svg viewBox="0 0 24 24" fill="currentColor" style="width:20px"><path d="M14.5 2.134a1 1 0 0 1 1 0l6 3.464a1 1 0 0 1 .5.866V21a1 1 0 0 1-1 1h-6a1 1 0 0 1-1-1V2.134zM16 4.732V20h4V7.041l-4-2.309zM3 22a1 1 0 0 1-1-1V3a1 1 0 0 1 2 0v18a1 1 0 0 1-1 1zm6 0a1 1 0 0 1-1-1V3a1 1 0 0 1 2 0v18a1 1 0 0 1-1 1z"/></svg>
         </div>
         <div class="search-results" data-search-results></div>
       </div>
-      <div class="top-actions">
-        <button class="btn-ghost" id="logoutBtn">Log out</button>
-        <div class="avatar" id="userAvatar">U</div>
+      <div class="tb-actions">
+        <button class="pill-btn dark" id="installBtn"><svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" style="margin-right:6px;vertical-align:-2px"><path d="M11.75 1a.75.75 0 0 1 .75.75v9.69l1.97-1.97a.75.75 0 1 1 1.06 1.06l-3.25 3.25a.75.75 0 0 1-1.06 0l-3.25-3.25a.75.75 0 1 1 1.06-1.06l1.97 1.97V1.75a.75.75 0 0 1 .75-.75z"/></svg>Install App</button>
+        <button class="pill-btn dark" aria-label="Notifications"><svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M8 1.5a4.5 4.5 0 0 0-4.5 4.5v3.5L2 11h12l-1.5-1.5V6A4.5 4.5 0 0 0 8 1.5zm-1.5 12a1.5 1.5 0 1 0 3 0h-3z"/></svg></button>
+        <button class="pill-btn" id="logoutBtn">Log out</button>
+        <button class="avatar-btn" id="userAvatar">U</button>
       </div>
     </header>
 
-    <section class="home-header">
-      <h1 id="greeting">Good morning</h1>
-      <div class="header-icons">
-        <button class="icon-btn" aria-label="Notifications"><svg width="20" height="20" viewBox="0 0 16 16" fill="currentColor"><path d="M8 1.5a4.5 4.5 0 0 0-4.5 4.5v3.5L2 11h12l-1.5-1.5V6A4.5 4.5 0 0 0 8 1.5zm-1.5 12a1.5 1.5 0 1 0 3 0h-3z"/></svg></button>
-        <button class="icon-btn" aria-label="Recently played"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg></button>
-        <button class="icon-btn" aria-label="Settings"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33h0a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51h0a1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82v0a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></button>
+    <div class="main-scroll" id="mainScroll">
+      <!-- Hero with greeting + quick picks -->
+      <section class="hero">
+        <h1 id="greeting">Good evening</h1>
+        <div class="quick-picks" id="quickPicks"></div>
+      </section>
+
+      <!-- Filter chips (Spotify Home All/Music/Podcasts) -->
+      <div class="filter-row">
+        <button class="filter-chip active">All</button>
+        <button class="filter-chip">Music</button>
+        <button class="filter-chip">Podcasts</button>
       </div>
-    </section>
 
-    <div class="shortcuts" id="shortcuts"></div>
-
-    <div id="dynSections"></div>
+      <!-- Dynamic sections injected by home.js -->
+      <div id="dynSections"></div>
+    </div>
   </main>
 </div>
-
-<!-- Bottom nav (mobile mirror of Spotify-Clone DashboardScreen) -->
-<nav class="bottom-nav">
-  <button class="bn-item active" onclick="location.href='index.html'">
-    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M13.5 1.515a3 3 0 0 0-3 0L3 5.845a2 2 0 0 0-1 1.732V21a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1v-6h4v6a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V7.577a2 2 0 0 0-1-1.732l-7.5-4.33z"/></svg>
-    Home
-  </button>
-  <button class="bn-item" onclick="location.href='explore.html'">
-    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M10.533 1.279c-5.18 0-9.407 4.14-9.407 9.279s4.226 9.279 9.407 9.279c2.234 0 4.29-.77 5.907-2.058l4.353 4.353a1 1 0 1 0 1.414-1.414l-4.344-4.344a9.157 9.157 0 0 0 2.077-5.816c0-5.14-4.226-9.28-9.407-9.28zm-7.407 9.279c0-4.006 3.302-7.28 7.407-7.28s7.407 3.274 7.407 7.28-3.302 7.279-7.407 7.279-7.407-3.273-7.407-7.28z"/></svg>
-    Search
-  </button>
-  <button class="bn-item" onclick="location.href='library.html'">
-    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 22a1 1 0 0 1-1-1V3a1 1 0 0 1 2 0v18a1 1 0 0 1-1 1zM15.5 2.134A1 1 0 0 0 14 3v18a1 1 0 0 0 2 0V4.732l4 2.31V21a1 1 0 1 0 2 0V6.464a1 1 0 0 0-.5-.866l-6-3.464zM9 2a1 1 0 0 0-1 1v18a1 1 0 1 0 2 0V3a1 1 0 0 0-1-1z"/></svg>
-    Library
-  </button>
-  <button class="bn-item">
-    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M11.999 1.10059C5.97179 1.10059 1.09949 5.97289 1.09949 12.0001C1.09949 18.0273 5.97179 22.8996 11.999 22.8996C18.0262 22.8996 22.8985 18.0273 22.8985 12.0001C22.8985 5.97289 18.0262 1.10059 11.999 1.10059zM5 11h6V5h2v6h6v2h-6v6h-2v-6H5v-2z"/></svg>
-    Premium
-  </button>
-</nav>
 
 <div id="chrome-mini"></div>
 <script src="partials.js"></script>
