@@ -8,12 +8,16 @@ import Fullscreen from '@/components/Fullscreen'
 import Toasts from '@/components/Toasts'
 import ContextMenu from '@/components/ContextMenu'
 import { usePlayer } from '@/stores/playerStore'
+import { useAuth } from '@/stores/authStore'
 import { useShortcuts } from '@/hooks/useShortcuts'
+import { useSyncLikes } from '@/hooks/useSyncLikes'
 
 export default function AppLayout() {
   const init = usePlayer((s) => s.init)
-  useEffect(() => { init() }, [init])
+  const initAuth = useAuth((s) => s.init)
+  useEffect(() => { init(); initAuth() }, [init, initAuth])
   useShortcuts()
+  useSyncLikes()
 
   return (
     <div className="flex h-screen flex-col">

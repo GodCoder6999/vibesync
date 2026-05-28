@@ -1,6 +1,8 @@
 import { useNavigate } from 'react-router-dom'
 import { Icon } from './Icon'
 import SearchBar from './SearchBar'
+import AccountMenu from './AccountMenu'
+import { useAuth } from '@/stores/authStore'
 
 export default function Topbar() {
   const nav = useNavigate()
@@ -20,8 +22,21 @@ export default function Topbar() {
 
       <div className="ml-auto flex items-center gap-2">
         <button className="px-3 py-1.5 rounded-full bg-black text-xs font-bold text-white hover:scale-105">Explore Premium</button>
-        <button className="w-8 h-8 rounded-full bg-black grid place-items-center text-white">U</button>
+        <SignInOrAccount />
       </div>
     </header>
   )
+}
+
+function SignInOrAccount() {
+  const user = useAuth((s) => s.user)
+  const nav = useNavigate()
+  if (!user) {
+    return (
+      <button onClick={() => nav('/login')} className="px-4 py-2 rounded-full text-sm font-bold text-[var(--color-text-muted)] hover:text-white">
+        Sign in
+      </button>
+    )
+  }
+  return <AccountMenu />
 }
