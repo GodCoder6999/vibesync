@@ -4,6 +4,7 @@ import { api } from '@/lib/api'
 import { ActionBar, TrackTable } from './DetailShared'
 import { Section } from '@/components/Section'
 import { HeroSkeleton, TrackRowSkeleton, SectionSkeleton } from '@/components/Skeleton'
+import { useDominantColor } from '@/hooks/useDominantColor'
 import type { Tile } from '@/types'
 
 export default function Artist() {
@@ -26,22 +27,37 @@ export default function Artist() {
 
   return (
     <div>
-      <div className="relative h-[420px] flex items-end pb-12 px-6" style={{ background: data.img ? `linear-gradient(to bottom, transparent, #000), url("${data.img}") center/cover` : '#535353' }}>
+      <ArtistHero img={data.img} name={data.name} followers={data.follower_count || 0} />
+      <RestOfArtist data={data} albums={albums} />
+    </div>
+  )
+}
+
+function ArtistHero({ img, name, followers }: { img?: string; name: string; followers: number }) {
+  useDominantColor(img) // warm cache
+  return (
+    <div
+      className="relative h-[420px] flex items-end pb-12 px-6"
+      style={{ background: img ? `linear-gradient(to bottom, transparent, #000), url("${img}") center/cover` : '#535353' }}
+    >
         <div>
           <div className="text-sm font-bold text-white flex items-center gap-2">✓ Verified Artist</div>
-          <h1 className="text-7xl font-extrabold text-white">{data.name}</h1>
-          <div className="text-sm text-white mt-3">{(data.follower_count || 0).toLocaleString()} monthly listeners</div>
+          <h1 className="text-7xl font-extrabold text-white">{name}</h1>
+          <div className="text-sm text-white mt-3">{followers.toLocaleString()} monthly listeners</div>
         </div>
-      </div>
+    </div>
+  )
+}
 
+function RestOfArtist({ data, albums }: { data: any; albums: Tile[] }) {
+  return (
+    <>
       <ActionBar tracks={data.top_songs || []} />
-
       <section className="px-6 py-4">
         <h2 className="text-2xl font-bold text-white mb-4">Popular</h2>
         <TrackTable tracks={(data.top_songs || []).slice(0, 5)} />
       </section>
-
       <Section title="Discography" items={albums} />
-    </div>
+    </>
   )
 }

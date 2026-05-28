@@ -1,6 +1,7 @@
 import type { Track } from '@/types'
 import { usePlayer } from '@/stores/playerStore'
 import { Icon } from '@/components/Icon'
+import { useDominantColor } from '@/hooks/useDominantColor'
 
 function fmt(s: number) {
   if (!s) return '0:00'
@@ -12,8 +13,12 @@ export function HeroHeader({ kind, title, subtitle, img, count, totalSec }: {
   kind: string; title: string; subtitle?: string; img?: string;
   count?: number; totalSec?: number
 }) {
+  const color = useDominantColor(img)
   return (
-    <div className="flex items-end gap-6 px-6 pt-16 pb-6 bg-gradient-to-b from-[#535353] to-transparent">
+    <div
+      className="flex items-end gap-6 px-6 pt-16 pb-6 transition-colors duration-500"
+      style={{ background: `linear-gradient(to bottom, ${color} 0%, transparent 100%)` }}
+    >
       <div className="w-[232px] h-[232px] bg-[var(--color-bg-pressed)] bg-cover bg-center shadow-2xl" style={{ backgroundImage: img ? `url("${img}")` : undefined }} />
       <div>
         <div className="text-xs font-bold uppercase text-white">{kind}</div>
