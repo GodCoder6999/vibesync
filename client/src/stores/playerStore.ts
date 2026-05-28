@@ -5,6 +5,10 @@ import { api } from '@/lib/api'
 
 type Repeat = 'off' | 'all' | 'one'
 
+// Module-level (non-reactive) crossfade + sleep state.
+let _crossfadeSec = Number(localStorage.getItem('vs-crossfade') || 0)
+let _sleepTimer: ReturnType<typeof setTimeout> | null = null
+
 type State = {
   queue: Track[]
   index: number
@@ -32,6 +36,8 @@ type Actions = {
   toggleMute: () => void
   toggleShuffle: () => void
   cycleRepeat: () => void
+  setCrossfade: (sec: number) => void
+  setSleepTimer: (min: number) => void
   _loadIndex: (i: number) => Promise<void>
 }
 
@@ -110,6 +116,13 @@ export const usePlayer = create<State & Actions>()(
         const next: Repeat = cur === 'off' ? 'all' : cur === 'all' ? 'one' : 'off'
         const a = get().audio; if (a) a.loop = next === 'one'
         set({ repeat: next })
+      },
+      setCrossfade: (sec) => { _crossfadeSec = Math.max(0, Math.min(12, sec)) },
+      setSleepTimer: (min) => {
+        if (_sleepTimer) { clearTimeout(_sleepTimer); _sleepTimer = null }
+        if (min > 0) {
+          _sleepTimer = setTimeout(() => { get().pause() }, min * 60_000)
+        }
       },
 
       _loadIndex: async (i) => {

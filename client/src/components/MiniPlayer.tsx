@@ -37,7 +37,7 @@ export default function MiniPlayer() {
       <div className="flex items-center gap-3 min-w-0">
         {current ? (
           <>
-            <div className="w-14 h-14 rounded bg-[var(--color-bg-elevated)] bg-cover bg-center" style={{ backgroundImage: current.img ? `url("${current.img}")` : undefined }} />
+            <button onClick={() => useUi.getState().toggleFullscreen()} title="Fullscreen" className="w-14 h-14 rounded bg-[var(--color-bg-elevated)] bg-cover bg-center shrink-0" style={{ backgroundImage: current.img ? `url("${current.img}")` : undefined }} />
             <div className="min-w-0">
               <div className="text-white text-sm truncate">{current.title}</div>
               <div className="text-xs text-[var(--color-text-muted)] truncate">{current.artist}</div>

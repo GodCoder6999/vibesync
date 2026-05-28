@@ -1,5 +1,8 @@
 import type { Track } from '@/types'
 import { usePlayer } from '@/stores/playerStore'
+import { useUi } from '@/stores/uiStore'
+import { useLikes } from '@/stores/likesStore'
+import { useNavigate } from 'react-router-dom'
 import { Icon } from '@/components/Icon'
 import { useDominantColor } from '@/hooks/useDominantColor'
 
@@ -46,6 +49,27 @@ export function ActionBar({ tracks }: { tracks: Track[] }) {
 
 export function TrackTable({ tracks, showAlbum }: { tracks: Track[]; showAlbum?: boolean }) {
   const setQueue = usePlayer((s) => s.setQueue)
+  const queue = usePlayer((s) => s.queue)
+  const openMenu = useUi((s) => s.openMenu)
+  const toast = useUi((s) => s.toast)
+  const toggleLike = useLikes((s) => s.toggle)
+  const isLiked = useLikes((s) => s.isLiked)
+  const nav = useNavigate()
+
+  function onContext(e: React.MouseEvent, t: Track) {
+    e.preventDefault()
+    openMenu({
+      x: e.clientX,
+      y: e.clientY,
+      items: [
+        { label: 'Add to queue', onClick: () => { usePlayer.setState({ queue: [...queue, t] }); toast('Added to queue') } },
+        { label: isLiked(t.id) ? 'Remove from Liked Songs' : 'Save to your Liked Songs', onClick: () => { toggleLike(t); toast(isLiked(t.id) ? 'Removed' : 'Saved to Liked Songs') } },
+        { label: 'Go to artist', onClick: () => nav(`/search/${encodeURIComponent(t.artist || '')}`), divider: true },
+        { label: 'Copy song link', onClick: () => { navigator.clipboard.writeText(`${location.origin}/`); toast('Link copied') } },
+      ],
+    })
+  }
+
   return (
     <table className="w-full text-sm px-6">
       <thead className="border-b border-white/10 text-[var(--color-text-muted)]">
@@ -58,7 +82,12 @@ export function TrackTable({ tracks, showAlbum }: { tracks: Track[]; showAlbum?:
       </thead>
       <tbody>
         {tracks.map((t, i) => (
-          <tr key={`${t.id}-${i}`} onClick={() => setQueue(tracks, i)} className="hover:bg-white/10 cursor-pointer">
+          <tr
+            key={`${t.id}-${i}`}
+            onClick={() => setQueue(tracks, i)}
+            onContextMenu={(e) => onContext(e, t)}
+            className="hover:bg-white/10 cursor-pointer"
+          >
             <td className="py-2 pl-4 text-[var(--color-text-muted)]">{i + 1}</td>
             <td className="py-2 flex items-center gap-3">
               <div className="w-10 h-10 rounded bg-cover bg-center" style={{ backgroundImage: t.img ? `url("${t.img}")` : undefined }} />

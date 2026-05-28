@@ -4,11 +4,16 @@ import Sidebar from '@/components/Sidebar'
 import Topbar from '@/components/Topbar'
 import MiniPlayer from '@/components/MiniPlayer'
 import RightSidebar from '@/components/RightSidebar'
+import Fullscreen from '@/components/Fullscreen'
+import Toasts from '@/components/Toasts'
+import ContextMenu from '@/components/ContextMenu'
 import { usePlayer } from '@/stores/playerStore'
+import { useShortcuts } from '@/hooks/useShortcuts'
 
 export default function AppLayout() {
   const init = usePlayer((s) => s.init)
   useEffect(() => { init() }, [init])
+  useShortcuts()
 
   return (
     <div className="flex h-screen flex-col">
@@ -23,6 +28,9 @@ export default function AppLayout() {
         <RightSidebar />
       </div>
       <MiniPlayer />
+      <Fullscreen />
+      <Toasts />
+      <ContextMenu />
     </div>
   )
 }
