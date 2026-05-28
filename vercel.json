@@ -1,6 +1,3 @@
 {
-  "framework": null,
-  "rewrites": [
-    { "source": "/", "destination": "/presplash.html" }
-  ]
+  "framework": null
 }
