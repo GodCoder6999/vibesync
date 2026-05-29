@@ -1,5 +1,38 @@
 @import "tailwindcss";
 
+/* Real Spotify Encore fonts (from open.spotify.com capture, latin subset) */
+@font-face {
+  font-family: SpotifyMixUI;
+  font-weight: 400;
+  font-display: swap;
+  src: url("/fonts/SpotifyMixUI-Regular.woff2") format("woff2");
+}
+@font-face {
+  font-family: SpotifyMixUI;
+  font-weight: 700;
+  font-display: swap;
+  src: url("/fonts/SpotifyMixUI-Bold.woff2") format("woff2");
+}
+@font-face {
+  font-family: SpotifyMixUITitle;
+  font-weight: 700 800;
+  font-display: swap;
+  src: url("/fonts/SpotifyMixUITitleVariable.woff2") format("woff2");
+}
+@font-face {
+  font-family: SpotifyMixUITitleVariable;
+  font-weight: 100 1000;
+  font-display: swap;
+  font-stretch: 50% 150%;
+  src: url("/fonts/SpotifyMixUITitleVariable.woff2") format("woff2-variations");
+}
+@font-face {
+  font-family: SpotifyMixMono;
+  font-weight: 400;
+  font-display: swap;
+  src: url("/fonts/SpotifyMixMono-Regular.woff2") format("woff2");
+}
+
 @theme {
   /* Spotify Encore tokens extracted from open.spotify.com snapshot */
   --color-bg: #000000;
@@ -18,7 +51,12 @@
   --color-danger: #f15e6c;
   --color-hero-default: rgb(83,83,83);
 
-  --font-sans: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+  /* Encore font stacks, exact from open.spotify.com */
+  --fallback-fonts: 'Helvetica Neue', helvetica, arial, sans-serif;
+  --font-sans: SpotifyMixUI, var(--fallback-fonts);
+  --font-title: SpotifyMixUITitle, var(--fallback-fonts);
+  --font-variable: SpotifyMixUITitleVariable, var(--fallback-fonts);
+  --font-mono: SpotifyMixMono, monospace;
 
   --radius-card: 8px;
   --radius-pill: 9999px;

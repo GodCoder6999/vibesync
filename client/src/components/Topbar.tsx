@@ -39,14 +39,14 @@ export default function Topbar() {
 
       <div className="flex items-center gap-2 shrink-0">
         <button
-          className="hidden lg:inline px-3 py-1.5 rounded-full text-xs font-bold text-[var(--color-text-muted)] hover:text-white hover:scale-105"
-          aria-label="Upgrade to Premium"
-          title="Upgrade to Premium"
+          className="hidden lg:inline px-4 py-2 rounded-full text-sm font-bold bg-white text-black hover:scale-105 transition-transform"
+          aria-label="Explore Premium"
+          title="Explore Premium"
         >
-          Upgrade to Premium
+          Explore Premium
         </button>
         <button
-          className="hidden lg:flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold text-[var(--color-text-muted)] hover:text-white hover:bg-[var(--color-bg-hover)]"
+          className="hidden lg:flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-bold text-[var(--color-text-muted)] hover:text-white hover:scale-105 transition-transform"
           aria-label="Install App"
           title="Install App"
         >
@@ -58,7 +58,7 @@ export default function Topbar() {
           aria-label="What's New"
           title="What's New"
         >
-          <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M14 8.667A.667.667 0 0 1 13.333 9H10v3.333a.667.667 0 0 1-.667.667H6.667A.667.667 0 0 1 6 12.333V9H2.667A.667.667 0 0 1 2 8.333V7.667A.667.667 0 0 1 2.667 7H6V3.667A.667.667 0 0 1 6.667 3h2.666A.667.667 0 0 1 10 3.667V7h3.333A.667.667 0 0 1 14 7.667v1z"/></svg>
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M8 1.5A4.5 4.5 0 0 0 3.5 6v2.382l-.947 1.894A.75.75 0 0 0 3.224 11.5h9.552a.75.75 0 0 0 .671-1.224L12.5 8.382V6A4.5 4.5 0 0 0 8 1.5zM6.5 13a1.5 1.5 0 0 0 3 0h-3z"/></svg>
         </button>
         <button
           className="w-8 h-8 grid place-items-center text-[var(--color-text-muted)] hover:text-white hover:bg-[var(--color-bg-hover)] rounded-full"
