@@ -32,17 +32,30 @@ export default function MiniPlayer() {
   const liked = useLikes((s) => (current ? s.isLiked(current.id) : false))
   const toggleLike = useLikes((s) => s.toggle)
 
+  const nowPlayingLabel = current ? `Now playing: ${current.title} by ${current.artist}` : 'Now playing bar'
+
   return (
-    <footer className="h-[90px] grid grid-cols-[30%_40%_30%] items-center px-4 bg-black border-t border-white/5">
+    <footer aria-label={nowPlayingLabel} className="h-[90px] grid grid-cols-[30%_40%_30%] items-center px-4 bg-black border-t border-white/5">
       <div className="flex items-center gap-3 min-w-0">
         {current ? (
           <>
-            <button onClick={() => useUi.getState().toggleFullscreen()} title="Fullscreen" className="w-14 h-14 rounded bg-[var(--color-bg-elevated)] bg-cover bg-center shrink-0" style={{ backgroundImage: current.img ? `url("${current.img}")` : undefined }} />
+            <button
+              onClick={() => useUi.getState().toggleFullscreen()}
+              aria-label="Open Miniplayer"
+              title="Open Miniplayer"
+              className="w-14 h-14 rounded bg-[var(--color-bg-elevated)] bg-cover bg-center shrink-0"
+              style={{ backgroundImage: current.img ? `url("${current.img}")` : undefined }}
+            />
             <div className="min-w-0">
               <div className="text-white text-sm truncate">{current.title}</div>
               <div className="text-xs text-[var(--color-text-muted)] truncate">{current.artist}</div>
             </div>
-            <button onClick={() => toggleLike(current)} className={`ml-2 ${liked ? 'text-[var(--color-accent)]' : 'text-[var(--color-text-muted)] hover:text-white'}`} title="Save">
+            <button
+              onClick={() => toggleLike(current)}
+              className={`ml-2 ${liked ? 'text-[var(--color-accent)]' : 'text-[var(--color-text-muted)] hover:text-white'}`}
+              aria-label={liked ? 'Remove from Your Library' : 'Save to Your Library'}
+              title={liked ? 'Remove from Your Library' : 'Save to Your Library'}
+            >
               <Icon name="heart" className="w-5 h-5" filled={liked} />
             </button>
           </>
@@ -51,21 +64,31 @@ export default function MiniPlayer() {
         )}
       </div>
 
-      <div className="flex flex-col items-center gap-1">
+      <div role="group" aria-label="Player controls" className="flex flex-col items-center gap-1">
         <div className="flex items-center gap-4">
-          <button onClick={toggleShuffle} className={shuffle ? 'text-[var(--color-accent)]' : 'text-[var(--color-text-muted)] hover:text-white'} title="Shuffle">
+          <button
+            onClick={toggleShuffle}
+            className={shuffle ? 'text-[var(--color-accent)]' : 'text-[var(--color-text-muted)] hover:text-white'}
+            aria-label={shuffle ? 'Disable Shuffle' : 'Enable Shuffle for Liked Songs'}
+            title={shuffle ? 'Disable Shuffle' : 'Enable Shuffle'}
+          >
             <Icon name="shuffle" className="w-4 h-4" filled />
           </button>
-          <button onClick={prev} className="text-[var(--color-text-muted)] hover:text-white" title="Previous">
+          <button onClick={prev} className="text-[var(--color-text-muted)] hover:text-white" aria-label="Previous" title="Previous">
             <Icon name="prev" className="w-4 h-4" filled />
           </button>
-          <button onClick={toggle} className="w-9 h-9 grid place-items-center rounded-full bg-white text-black hover:scale-105" title="Play/Pause">
+          <button onClick={toggle} className="w-9 h-9 grid place-items-center rounded-full bg-white text-black hover:scale-105" aria-label={isPlaying ? 'Pause' : 'Play'} title={isPlaying ? 'Pause' : 'Play'}>
             <Icon name={isPlaying ? 'pause' : 'play'} className="w-4 h-4" filled />
           </button>
-          <button onClick={next} className="text-[var(--color-text-muted)] hover:text-white" title="Next">
+          <button onClick={next} className="text-[var(--color-text-muted)] hover:text-white" aria-label="Next" title="Next">
             <Icon name="next" className="w-4 h-4" filled />
           </button>
-          <button onClick={cycleRepeat} className={repeat !== 'off' ? 'text-[var(--color-accent)]' : 'text-[var(--color-text-muted)] hover:text-white'} title={`Repeat: ${repeat}`}>
+          <button
+            onClick={cycleRepeat}
+            className={repeat !== 'off' ? 'text-[var(--color-accent)]' : 'text-[var(--color-text-muted)] hover:text-white'}
+            aria-label={repeat === 'off' ? 'Enable Repeat' : repeat === 'all' ? 'Enable repeat one' : 'Disable Repeat'}
+            title={`Repeat: ${repeat}`}
+          >
             <Icon name="repeat" className="w-4 h-4" filled />
           </button>
         </div>
@@ -85,10 +108,10 @@ export default function MiniPlayer() {
 
       <div className="flex items-center justify-end gap-2">
         <RightToggle />
-        <button title="Connect to device" className="text-[var(--color-text-muted)] hover:text-white">
+        <button aria-label="Connect to a device" title="Connect to a device" className="text-[var(--color-text-muted)] hover:text-white">
           <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M6 2.75A.75.75 0 0 1 6.75 2h7.5a.75.75 0 0 1 .75.75v8.5a.75.75 0 0 1-.75.75h-3.5v-1.5h2.75v-7h-6v1.5H6v-2.25z"/><path d="M1 6.75A.75.75 0 0 1 1.75 6h7.5a.75.75 0 0 1 .75.75v6.5a.75.75 0 0 1-.75.75h-7.5a.75.75 0 0 1-.75-.75v-6.5z"/></svg>
         </button>
-        <button onClick={toggleMute} className="text-[var(--color-text-muted)] hover:text-white">
+        <button onClick={toggleMute} aria-label={muted || volume === 0 ? 'Unmute' : 'Mute'} title={muted ? 'Unmute' : 'Volume high'} className="text-[var(--color-text-muted)] hover:text-white">
           <Icon name="volume" className="w-5 h-5" filled />
         </button>
         <input
@@ -100,7 +123,7 @@ export default function MiniPlayer() {
           onChange={(e) => setVolume(Number(e.target.value))}
           className="w-20 accent-white h-1"
         />
-        <button onClick={() => useUi.getState().toggleFullscreen()} title="Fullscreen" className="text-[var(--color-text-muted)] hover:text-white">
+        <button onClick={() => useUi.getState().toggleFullscreen()} aria-label="Enter Full screen" title="Enter Full screen" className="text-[var(--color-text-muted)] hover:text-white">
           <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M0 5.5A1.5 1.5 0 0 1 1.5 4h13A1.5 1.5 0 0 1 16 5.5v6a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 0 11.5v-6zm14.5-.5h-13v6h13v-6z"/></svg>
         </button>
       </div>

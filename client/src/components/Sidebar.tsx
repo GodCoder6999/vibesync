@@ -79,12 +79,22 @@ export default function Sidebar() {
     <aside style={{ width: compact ? 80 : width }} className="relative flex flex-col gap-2 transition-[width] duration-150 shrink-0">
       <div className="bg-[var(--color-bg-panel)] rounded-lg flex-1 flex flex-col overflow-hidden">
         <header className="flex items-center justify-between p-4 pb-2">
-          <button onClick={toggleSidebar} className="flex items-center gap-3 text-[var(--color-text-muted)] hover:text-white" title={compact ? 'Expand' : 'Collapse'}>
+          <button
+            onClick={toggleSidebar}
+            className="flex items-center gap-3 text-[var(--color-text-muted)] hover:text-white"
+            aria-label={compact ? 'Expand Your Library' : 'Collapse Your Library'}
+            title={compact ? 'Expand Your Library' : 'Collapse Your Library'}
+          >
             <Icon name="library" className="w-6 h-6" filled />
             {!compact && <span className="font-bold text-white">Your Library</span>}
           </button>
           {!compact && (
-            <button onClick={createPl} className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[var(--color-bg-hover)] hover:bg-[var(--color-bg-pressed)] text-sm font-bold text-white" title="Create playlist">
+            <button
+              onClick={createPl}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[var(--color-bg-hover)] hover:bg-[var(--color-bg-pressed)] text-sm font-bold text-white"
+              aria-label="Create playlist or folder"
+              title="Create playlist or folder"
+            >
               <span className="text-lg leading-none">+</span> Create
             </button>
           )}
@@ -117,12 +127,21 @@ export default function Sidebar() {
                   className="bg-[var(--color-bg-hover)] px-3 py-1 rounded text-sm text-white outline-none w-44"
                 />
               ) : (
-                <button onClick={() => setSearchOpen(true)} className="w-8 h-8 grid place-items-center hover:bg-[var(--color-bg-hover)] rounded-full" title="Search in Library">
+                <button
+                  onClick={() => setSearchOpen(true)}
+                  className="w-8 h-8 grid place-items-center hover:bg-[var(--color-bg-hover)] rounded-full"
+                  aria-label="Search in Your Library"
+                  title="Search in Your Library"
+                >
                   <Icon name="search" className="w-4 h-4" filled />
                 </button>
               )}
             </div>
-            <button className="flex items-center gap-1 text-xs hover:text-white" title="Sort">
+            <button
+              className="flex items-center gap-1 text-xs hover:text-white"
+              aria-label="Recents, Default list view"
+              title="Sort by Recents"
+            >
               Recents
               <svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor"><path d="M14.5 5.5L8 12 1.5 5.5h13z"/></svg>
             </button>

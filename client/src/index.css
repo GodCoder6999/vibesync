@@ -1,24 +1,29 @@
 @import "tailwindcss";
 
 @theme {
+  /* Spotify Encore tokens extracted from open.spotify.com snapshot */
   --color-bg: #000000;
   --color-bg-panel: #121212;
-  --color-bg-elevated: #1a1a1a;
+  --color-bg-elevated: #181818;
   --color-bg-hover: #1f1f1f;
-  --color-bg-pressed: #2a2a2a;
+  --color-bg-pressed: #282828;
+  --color-bg-tint: #383838;
   --color-text: #ffffff;
   --color-text-muted: #b3b3b3;
   --color-text-subdued: #6a6a6a;
   --color-accent: #1ed760;
   --color-accent-hover: #1fdf64;
   --color-accent-pressed: #169c46;
+  --color-accent-dim: #1abc54;
   --color-danger: #f15e6c;
+  --color-hero-default: rgb(83,83,83);
 
   --font-sans: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
 
   --radius-card: 8px;
   --radius-pill: 9999px;
   --shadow-card: 0 8px 24px rgba(0,0,0,0.5);
+  --shadow-fab: 0 8px 8px rgba(0,0,0,0.3);
 }
 
 * { box-sizing: border-box; }

@@ -38,16 +38,34 @@ export default function Topbar() {
       </div>
 
       <div className="flex items-center gap-2 shrink-0">
-        <button className="hidden lg:inline px-3 py-1.5 rounded-full text-xs font-bold text-[var(--color-text-muted)] hover:text-white">Explore Premium</button>
-        <button className="hidden lg:flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold text-[var(--color-text-muted)] hover:text-white" title="Install App">
+        <button
+          className="hidden lg:inline px-3 py-1.5 rounded-full text-xs font-bold text-[var(--color-text-muted)] hover:text-white hover:scale-105"
+          aria-label="Upgrade to Premium"
+          title="Upgrade to Premium"
+        >
+          Upgrade to Premium
+        </button>
+        <button
+          className="hidden lg:flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold text-[var(--color-text-muted)] hover:text-white hover:bg-[var(--color-bg-hover)]"
+          aria-label="Install App"
+          title="Install App"
+        >
           <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M8 1.5a.75.75 0 0 1 .75.75v6.94l1.97-1.97a.75.75 0 1 1 1.06 1.06L8 12.06 4.22 8.28a.75.75 0 1 1 1.06-1.06l1.97 1.97V2.25A.75.75 0 0 1 8 1.5zM3 13.5h10v1.5H3v-1.5z"/></svg>
           Install App
         </button>
-        <button className="w-8 h-8 grid place-items-center text-[var(--color-text-muted)] hover:text-white" title="Notifications">
-          <svg width="18" height="18" viewBox="0 0 16 16" fill="currentColor"><path d="M8 1a4 4 0 0 0-4 4v3.586L2.586 9.999A1 1 0 0 0 3.293 11.7h9.414a1 1 0 0 0 .707-1.707L12 8.586V5a4 4 0 0 0-4-4zM6.5 13a1.5 1.5 0 0 0 3 0h-3z"/></svg>
+        <button
+          className="w-8 h-8 grid place-items-center text-[var(--color-text-muted)] hover:text-white hover:bg-[var(--color-bg-hover)] rounded-full"
+          aria-label="What's New"
+          title="What's New"
+        >
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M14 8.667A.667.667 0 0 1 13.333 9H10v3.333a.667.667 0 0 1-.667.667H6.667A.667.667 0 0 1 6 12.333V9H2.667A.667.667 0 0 1 2 8.333V7.667A.667.667 0 0 1 2.667 7H6V3.667A.667.667 0 0 1 6.667 3h2.666A.667.667 0 0 1 10 3.667V7h3.333A.667.667 0 0 1 14 7.667v1z"/></svg>
         </button>
-        <button className="w-8 h-8 grid place-items-center text-[var(--color-text-muted)] hover:text-white" title="Friend Activity">
-          <svg width="18" height="18" viewBox="0 0 16 16" fill="currentColor"><path d="M5 4a3 3 0 1 1 6 0 3 3 0 0 1-6 0zM3 13c0-2.21 2.69-4 5-4s5 1.79 5 4v1H3v-1z"/></svg>
+        <button
+          className="w-8 h-8 grid place-items-center text-[var(--color-text-muted)] hover:text-white hover:bg-[var(--color-bg-hover)] rounded-full"
+          aria-label="Friend Activity"
+          title="Friend Activity"
+        >
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M14.5 1A1.5 1.5 0 0 1 16 2.5v8a1.5 1.5 0 0 1-1.5 1.5H7.621a.5.5 0 0 0-.354.146L4.354 15.06A.5.5 0 0 1 3.5 14.707V12.5A1.5 1.5 0 0 1 2 11V2.5A1.5 1.5 0 0 1 3.5 1h11z"/></svg>
         </button>
         <SignInOrAccount />
       </div>

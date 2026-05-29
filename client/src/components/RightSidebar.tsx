@@ -13,13 +13,13 @@ export default function RightSidebar() {
   if (!rightOpen) return null
 
   return (
-    <aside className="w-[360px] flex flex-col rounded-lg bg-[var(--color-bg-panel)] overflow-hidden">
+    <aside aria-label="Now playing view" className="w-[360px] flex flex-col rounded-lg bg-[var(--color-bg-panel)] overflow-hidden">
       <header className="flex items-center gap-2 p-3 border-b border-white/5">
         <h2 className="text-white font-bold text-sm flex-1 truncate">{current?.title || 'Now Playing'}</h2>
-        <button onClick={toggleFullscreen} className="w-8 h-8 grid place-items-center rounded-full hover:bg-white/10 text-[var(--color-text-muted)] hover:text-white" title="Fullscreen">
+        <button onClick={toggleFullscreen} aria-label="Expand Now Playing view" title="Expand Now Playing view" className="w-8 h-8 grid place-items-center rounded-full hover:bg-white/10 text-[var(--color-text-muted)] hover:text-white">
           <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M2 2v4h1.5V3.5H6V2H2zm12 0h-4v1.5h2.5V6H14V2zM2 14h4v-1.5H3.5V10H2v4zm12 0v-4h-1.5v2.5H10V14h4z"/></svg>
         </button>
-        <button onClick={() => toggleRight()} className="w-8 h-8 grid place-items-center rounded-full hover:bg-white/10 text-[var(--color-text-muted)] hover:text-white text-lg" title="Close">×</button>
+        <button onClick={() => toggleRight()} aria-label="Hide Now Playing view" title="Hide Now Playing view" className="w-8 h-8 grid place-items-center rounded-full hover:bg-white/10 text-[var(--color-text-muted)] hover:text-white text-lg">×</button>
       </header>
 
       <nav className="flex gap-1 px-3 py-2 border-b border-white/5">
