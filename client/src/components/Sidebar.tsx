@@ -14,12 +14,34 @@ const DEFAULT_WIDTH = 300
 
 export default function Sidebar() {
   const liked = useLikes((s) => s.tracks.length)
-  const { sidebarCollapsed, toggleSidebar, libFilter, setLibFilter, toast } = useUi()
+  const { sidebarCollapsed, toggleSidebar, libFilter, setLibFilter, libSort, setLibSort, libView, setLibView, toast, openMenu } = useUi()
   const user = useAuth((s) => s.user)
   const nav = useNavigate()
   const qc = useQueryClient()
   const [search, setSearch] = useState('')
   const [searchOpen, setSearchOpen] = useState(false)
+
+  const SORT_LABELS: Record<typeof libSort, string> = {
+    recents: 'Recents',
+    'recently-added': 'Recently Added',
+    alphabetical: 'Alphabetical',
+    creator: 'Creator',
+  }
+  function openSortMenu(e: React.MouseEvent) {
+    e.preventDefault()
+    const sorts: (typeof libSort)[] = ['recents', 'recently-added', 'alphabetical', 'creator']
+    openMenu({
+      x: e.clientX, y: e.clientY,
+      items: [
+        { label: 'Sort by', onClick: () => {}, divider: true },
+        ...sorts.map((s) => ({ label: SORT_LABELS[s] + (libSort === s ? '  ✓' : ''), onClick: () => setLibSort(s) })),
+        { label: 'View as', onClick: () => {}, divider: true },
+        { label: 'Compact' + (libView === 'compact' ? '  ✓' : ''), onClick: () => setLibView('compact') },
+        { label: 'List' + (libView === 'list' ? '  ✓' : ''), onClick: () => setLibView('list') },
+        { label: 'Grid' + (libView === 'grid' ? '  ✓' : ''), onClick: () => setLibView('grid') },
+      ],
+    })
+  }
 
   const { data: myPls = [] } = useQuery({
     queryKey: ['my-playlists', user?.id],
@@ -69,11 +91,14 @@ export default function Sidebar() {
     ...myPls.map((p) => ({ id: p.id, kind: 'mine' as const, title: p.title, sub: `Playlist · ${user?.display_name || user?.email || 'You'}`, href: `/me/playlist/${p.id}`, pinned: false, cover: p.cover_url, match: 'playlists' as const })),
   ]
 
-  const filtered = items.filter((it) => {
+  let filtered = items.filter((it) => {
     if (libFilter === 'all') return true
     if (libFilter === 'playlists') return it.match === 'playlists'
     return false
   }).filter((it) => !search || it.title.toLowerCase().includes(search.toLowerCase()))
+
+  if (libSort === 'alphabetical') filtered = [...filtered].sort((a, b) => a.title.localeCompare(b.title))
+  if (libSort === 'creator') filtered = [...filtered].sort((a, b) => a.sub.localeCompare(b.sub))
 
   return (
     <aside style={{ width: compact ? 80 : width }} className="relative flex flex-col gap-2 transition-[width] duration-150 shrink-0">
@@ -138,42 +163,79 @@ export default function Sidebar() {
               )}
             </div>
             <button
-              className="flex items-center gap-1 text-xs hover:text-white"
-              aria-label="Recents, Default list view"
-              title="Sort by Recents"
+              onClick={openSortMenu}
+              className="flex items-center gap-2 text-xs text-white hover:text-white"
+              aria-label={`${SORT_LABELS[libSort]}, ${libView} view`}
+              title={`${SORT_LABELS[libSort]}, ${libView} view`}
             >
-              Recents
-              <svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor"><path d="M14.5 5.5L8 12 1.5 5.5h13z"/></svg>
+              {SORT_LABELS[libSort]}
+              {libView === 'list' && (
+                <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M15 14.5H1V13h14v1.5zm0-4H1V9h14v1.5zm0-4H1V5h14v1.5zM15 2.5H1V1h14v1.5z"/></svg>
+              )}
+              {libView === 'compact' && (
+                <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M15 14.5H1V13h14v1.5zm0-4H1V9h14v1.5zm0-4H1V5h14v1.5z"/></svg>
+              )}
+              {libView === 'grid' && (
+                <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M2 2h5v5H2V2zm7 0h5v5H9V2zM2 9h5v5H2V9zm7 0h5v5H9V9z"/></svg>
+              )}
             </button>
           </div>
         )}
 
-        <div className="flex-1 overflow-y-auto px-2 pb-2">
+        <div className={`flex-1 overflow-y-auto pb-2 ${libView === 'grid' && !compact ? 'p-2 grid grid-cols-2 gap-2' : 'px-2'}`}>
           {filtered.length === 0 && !compact && (
-            <div className="px-4 py-8 text-center text-[var(--color-text-muted)] text-sm">No items match.</div>
+            <div className="px-4 py-8 text-center text-[var(--color-text-muted)] text-sm col-span-2">No items match.</div>
           )}
-          {filtered.map((it) => (
-            <Link key={`${it.kind}-${it.id}`} to={it.href} className="flex items-center gap-3 p-2 rounded hover:bg-[var(--color-bg-hover)]" title={it.title}>
-              {it.kind === 'liked' ? (
-                <div className="w-12 h-12 rounded bg-gradient-to-br from-purple-500 to-white/80 grid place-items-center text-white shrink-0">
-                  <Icon name="heart" className="w-5 h-5" filled />
-                </div>
-              ) : (
-                <div className="w-12 h-12 rounded bg-[var(--color-bg-pressed)] grid place-items-center text-[var(--color-text-muted)] shrink-0 bg-cover bg-center" style={{ backgroundImage: it.cover ? `url("${it.cover}")` : undefined }}>
-                  {!it.cover && '🎵'}
-                </div>
-              )}
-              {!compact && (
-                <div className="min-w-0 flex-1">
-                  <div className={`truncate flex items-center gap-1.5 ${it.pinned ? 'text-[var(--color-accent)]' : 'text-white'}`}>
-                    {it.title}
-                    {it.pinned && <span title="Pinned" className="text-[var(--color-accent)] text-xs">📌</span>}
-                  </div>
+          {filtered.map((it) => {
+            if (libView === 'grid' && !compact) {
+              return (
+                <Link key={`${it.kind}-${it.id}`} to={it.href} className="p-3 rounded bg-[var(--color-bg-elevated)] hover:bg-[var(--color-bg-hover)]" title={it.title}>
+                  {it.kind === 'liked' ? (
+                    <div className="aspect-square rounded mb-2 bg-gradient-to-br from-purple-500 to-white/80 grid place-items-center text-white">
+                      <Icon name="heart" className="w-6 h-6" filled />
+                    </div>
+                  ) : (
+                    <div className="aspect-square rounded mb-2 bg-[var(--color-bg-pressed)] grid place-items-center text-[var(--color-text-muted)] bg-cover bg-center" style={{ backgroundImage: it.cover ? `url("${it.cover}")` : undefined }}>
+                      {!it.cover && '🎵'}
+                    </div>
+                  )}
+                  <div className={`truncate text-sm ${it.pinned ? 'text-[var(--color-accent)]' : 'text-white'}`}>{it.title}</div>
                   <div className="text-xs text-[var(--color-text-muted)] truncate">{it.sub}</div>
-                </div>
-              )}
-            </Link>
-          ))}
+                </Link>
+              )
+            }
+            if (libView === 'compact' && !compact) {
+              return (
+                <Link key={`${it.kind}-${it.id}`} to={it.href} className="flex items-center gap-3 px-2 py-1 rounded hover:bg-[var(--color-bg-hover)]" title={it.title}>
+                  <span className={`text-xs w-4 text-[var(--color-text-muted)] ${it.pinned ? 'text-[var(--color-accent)]' : ''}`}>{it.pinned ? '📌' : '#'}</span>
+                  <span className={`text-sm truncate ${it.pinned ? 'text-[var(--color-accent)]' : 'text-white'}`}>{it.title}</span>
+                  <span className="text-xs text-[var(--color-text-muted)] truncate ml-auto">{it.sub.split(' · ')[0]}</span>
+                </Link>
+              )
+            }
+            return (
+              <Link key={`${it.kind}-${it.id}`} to={it.href} className="flex items-center gap-3 p-2 rounded hover:bg-[var(--color-bg-hover)]" title={it.title}>
+                {it.kind === 'liked' ? (
+                  <div className="w-12 h-12 rounded bg-gradient-to-br from-purple-500 to-white/80 grid place-items-center text-white shrink-0">
+                    <Icon name="heart" className="w-5 h-5" filled />
+                  </div>
+                ) : (
+                  <div className="w-12 h-12 rounded bg-[var(--color-bg-pressed)] grid place-items-center text-[var(--color-text-muted)] shrink-0 bg-cover bg-center" style={{ backgroundImage: it.cover ? `url("${it.cover}")` : undefined }}>
+                    {!it.cover && '🎵'}
+                  </div>
+                )}
+                {!compact && (
+                  <div className="min-w-0 flex-1">
+                    <div className={`truncate flex items-center gap-1.5 ${it.pinned ? 'text-[var(--color-accent)]' : 'text-white'}`}>
+                      {it.title}
+                      {it.pinned && <span title="Pinned" className="text-[var(--color-accent)] text-xs">📌</span>}
+                    </div>
+                    <div className="text-xs text-[var(--color-text-muted)] truncate">{it.sub}</div>
+                  </div>
+                )}
+              </Link>
+            )
+          })}
         </div>
       </div>
 

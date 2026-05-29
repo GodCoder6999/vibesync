@@ -11,11 +11,16 @@ type Menu = {
   items: { label: string; onClick: () => void; danger?: boolean; divider?: boolean }[]
 }
 
+type LibSort = 'recents' | 'recently-added' | 'alphabetical' | 'creator'
+type LibView = 'list' | 'compact' | 'grid'
+
 type State = {
   rightOpen: boolean
   rightTab: RightTab
   sidebarCollapsed: boolean
   libFilter: 'all' | 'playlists' | 'albums' | 'artists' | 'podcasts'
+  libSort: LibSort
+  libView: LibView
   fullscreen: boolean
   toasts: Toast[]
   menu: Menu | null
@@ -26,6 +31,8 @@ type Actions = {
   setRightTab: (tab: RightTab) => void
   toggleSidebar: () => void
   setLibFilter: (f: State['libFilter']) => void
+  setLibSort: (s: LibSort) => void
+  setLibView: (v: LibView) => void
   toggleFullscreen: () => void
   toast: (text: string) => void
   dismissToast: (id: number) => void
@@ -42,6 +49,8 @@ export const useUi = create<State & Actions>()(
       rightTab: 'queue',
       sidebarCollapsed: false,
       libFilter: 'all',
+      libSort: 'recents',
+      libView: 'list',
       fullscreen: false,
       toasts: [],
       menu: null,
@@ -52,6 +61,8 @@ export const useUi = create<State & Actions>()(
       setRightTab: (rightTab) => set({ rightTab, rightOpen: true }),
       toggleSidebar: () => set({ sidebarCollapsed: !get().sidebarCollapsed }),
       setLibFilter: (libFilter) => set({ libFilter }),
+      setLibSort: (libSort) => set({ libSort }),
+      setLibView: (libView) => set({ libView }),
       toggleFullscreen: () => set({ fullscreen: !get().fullscreen }),
       toast: (text) => {
         const id = ++toastId
@@ -69,6 +80,8 @@ export const useUi = create<State & Actions>()(
         rightTab: s.rightTab,
         sidebarCollapsed: s.sidebarCollapsed,
         libFilter: s.libFilter,
+        libSort: s.libSort,
+        libView: s.libView,
       }) as any,
     }
   )
