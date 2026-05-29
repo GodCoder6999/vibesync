@@ -137,8 +137,19 @@ export default function SearchBar() {
               setOpen(false); inputRef.current?.blur()
             }
           }}
+          data-encore-id="formInput"
+          role="combobox"
+          aria-owns="search-dropdown"
+          aria-controls="search-dropdown"
+          aria-expanded={open}
+          data-testid="search-input"
+          aria-label="What do you want to play?"
+          data-top-bar-search="true"
+          type="search"
+          spellCheck="false"
+          tabIndex={0}
           placeholder="What do you want to play?"
-          className="flex-1 bg-transparent outline-none text-sm text-white placeholder:text-[var(--color-text-muted)]"
+          className="flex-1 bg-transparent outline-none text-sm text-white text-ellipsis cursor-pointer rounded-[500px] placeholder:text-[var(--color-text-muted)] focus:cursor-[unset] focus:shadow-[rgb(255,255,255)_0px_0px_0px_2px_inset]"
         />
         {q ? (
           <button onMouseDown={(e) => { e.preventDefault(); setQ(''); inputRef.current?.focus() }} className="text-[var(--color-text-muted)] hover:text-white text-lg">×</button>
