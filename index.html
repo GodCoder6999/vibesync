@@ -1,71 +1,32 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" class="encore-dark-theme encore-layout-themes no-focus-outline spotify__os--is-windows spotify__container--is-web" dir="ltr">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Spotify – Web Player</title>
-<link rel="icon" href="https://www.scdn.co/i/_global/favicon.png">
-<link rel="stylesheet" href="styles.css">
-<script>
-if (!localStorage.getItem('vs_user') || !localStorage.getItem('vs_prefs')) {
-  location.replace('welcome.html');
-}
-</script>
-</head>
+  <meta charset="utf-8">
+  <title>Spotify - Web Player: Music for everyone</title>
+  
+  <link rel="stylesheet" href="styles.css">
+  <script>
+  if (!localStorage.getItem('vs_user') || !localStorage.getItem('vs_prefs')) {
+    location.replace('welcome.html');
+  }
+  </script>
+
+  </head>
 <body>
-<div class="app">
-  <div id="chrome-sidebar"></div>
 
-  <main class="main">
-    <header class="topbar">
-      <div class="tb-arrows">
-        <button class="arrow" aria-label="Back"><svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M11.03.47a.75.75 0 0 1 0 1.06L4.56 8l6.47 6.47a.75.75 0 1 1-1.06 1.06L2.44 8 9.97.47a.75.75 0 0 1 1.06 0z"/></svg></button>
-        <button class="arrow" aria-label="Forward"><svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M4.97.47a.75.75 0 0 0 0 1.06L11.44 8l-6.47 6.47a.75.75 0 1 0 1.06 1.06L13.56 8 6.03.47a.75.75 0 0 0-1.06 0z"/></svg></button>
-      </div>
-      <div class="tb-search-wrap">
-        <div class="tb-search">
-          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M10.533 1.279c-5.18 0-9.407 4.14-9.407 9.279s4.226 9.279 9.407 9.279c2.234 0 4.29-.77 5.907-2.058l4.353 4.353a1 1 0 1 0 1.414-1.414l-4.344-4.344a9.157 9.157 0 0 0 2.077-5.816c0-5.14-4.226-9.28-9.407-9.28zm-7.407 9.279c0-4.006 3.302-7.28 7.407-7.28s7.407 3.274 7.407 7.28-3.302 7.279-7.407 7.279-7.407-3.273-7.407-7.28z"/></svg>
-          <input placeholder="What do you want to play?" data-search-input>
-          <div class="tb-search-divider"></div>
-          <svg viewBox="0 0 24 24" fill="currentColor" style="width:20px"><path d="M14.5 2.134a1 1 0 0 1 1 0l6 3.464a1 1 0 0 1 .5.866V21a1 1 0 0 1-1 1h-6a1 1 0 0 1-1-1V2.134zM16 4.732V20h4V7.041l-4-2.309zM3 22a1 1 0 0 1-1-1V3a1 1 0 0 1 2 0v18a1 1 0 0 1-1 1zm6 0a1 1 0 0 1-1-1V3a1 1 0 0 1 2 0v18a1 1 0 0 1-1 1z"/></svg>
-        </div>
-        <div class="search-results" data-search-results></div>
-      </div>
-      <div class="tb-actions">
-        <button class="pill-btn dark" id="installBtn"><svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" style="margin-right:6px;vertical-align:-2px"><path d="M11.75 1a.75.75 0 0 1 .75.75v9.69l1.97-1.97a.75.75 0 1 1 1.06 1.06l-3.25 3.25a.75.75 0 0 1-1.06 0l-3.25-3.25a.75.75 0 1 1 1.06-1.06l1.97 1.97V1.75a.75.75 0 0 1 .75-.75z"/></svg>Install App</button>
-        <button class="pill-btn dark" aria-label="Notifications"><svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M8 1.5a4.5 4.5 0 0 0-4.5 4.5v3.5L2 11h12l-1.5-1.5V6A4.5 4.5 0 0 0 8 1.5zm-1.5 12a1.5 1.5 0 1 0 3 0h-3z"/></svg></button>
-        <button class="pill-btn" id="logoutBtn">Log out</button>
-        <button class="avatar-btn" id="userAvatar">U</button>
-      </div>
-    </header>
+  <div id="chrome-sidebar" style="display: none;"></div>
+  
+  <div id="chrome-mini"></div>
 
-    <div class="main-scroll" id="mainScroll">
-      <!-- Hero with greeting + quick picks -->
-      <section class="hero">
-        <h1 id="greeting">Good evening</h1>
-        <div class="quick-picks" id="quickPicks"></div>
-      </section>
-
-      <!-- Filter chips (Spotify Home All/Music/Podcasts) -->
-      <div class="filter-row">
-        <button class="filter-chip active">All</button>
-        <button class="filter-chip">Music</button>
-        <button class="filter-chip">Podcasts</button>
-      </div>
-
-      <!-- Dynamic sections injected by home.js -->
-      <div id="dynSections"></div>
-    </div>
-  </main>
-</div>
-
-<div id="chrome-mini"></div>
-<script src="partials.js"></script>
-<script>mountChrome('home');</script>
-<script src="config.js"></script>
-<script src="catalog.js"></script>
-<script src="api.js"></script>
-<script src="app.js"></script>
-<script src="home.js"></script>
+  <script src="partials.js"></script>
+  <script>
+    // Mount the VibeSync mini-player at the bottom
+    if (typeof mountChrome === 'function') mountChrome('home');
+  </script>
+  <script src="config.js"></script>
+  <script src="catalog.js"></script>
+  <script src="api.js"></script>
+  <script src="app.js"></script>
+  <script src="home.js"></script>
 </body>
 </html>
